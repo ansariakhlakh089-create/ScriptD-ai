@@ -2,7 +2,7 @@ name: Build ScriptD AI App
 
 on:
   push:
-    branches: [ "main" ] # Jab bhi main branch par code jayega, yeh chalega
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
@@ -11,36 +11,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # 1. Code ko checkout karna
     - uses: actions/checkout@v4
 
-    # 2. Java setup karna (Android build ke liye zaroori hai)
     - name: Set up Java
       uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
         java-version: '17'
 
-    # 3. Flutter setup karna
     - name: Set up Flutter
       uses: subosito/flutter-action@v2
       with:
         channel: 'stable'
-        cache:  true
 
-    # 4. Dependencies download karna (packages)
+    # 🌟 YEH NAYA STEP ADD KAREIN 🌟
+    # Yeh automatically 'android' aur 'ios' folder bana dega agar nahi hain toh
+    - name: Generate missing folders
+      run: flutter create .
+
     - name: Install dependencies
       run: flutter pub get
 
-    # 5. Code ki galtiyan check karna (Linting)
     - name: Analyze project source
       run: flutter analyze
 
-    # 6. APK Build karna (Release mode mein)
     - name: Build APK
       run: flutter build apk --release
 
-    # 7. Build hui APK ko upload karna taaki aap download kar sako
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
