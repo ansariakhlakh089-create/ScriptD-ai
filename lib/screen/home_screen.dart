@@ -26,7 +26,8 @@ class HomeScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(colors: [AppColors.primary, Color(0xFFF04E25)], begin: Alignment.topLeft, end: Alignment.bottomRight),
                   borderRadius: BorderRadius.circular(24),
-                  boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10))],
+                  // Yahan withOpacity ko hata kar withValues laga diya hai
+                  boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 10))],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
