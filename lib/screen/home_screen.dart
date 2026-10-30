@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
-import '../widgets/custom_button.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -26,7 +25,6 @@ class HomeScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(colors: [AppColors.primary, Color(0xFFF04E25)], begin: Alignment.topLeft, end: Alignment.bottomRight),
                   borderRadius: BorderRadius.circular(24),
-                  // Yahan withOpacity ko hata kar withValues laga diya hai
                   boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 10))],
                 ),
                 child: Column(
@@ -38,10 +36,21 @@ class HomeScreen extends StatelessWidget {
                     const SizedBox(height: 8),
                     const Text("Research se export tak, hum saath hain.", style: TextStyle(color: Colors.white70)),
                     const SizedBox(height: 20),
-                    CustomButton(
-                      text: "+ Start creating",
-                      isOutline: true,
-                      onPressed: () {},
+                    // CustomButton ka code yahan directly daal diya hai
+                    SizedBox(
+                      width: double.infinity,
+                      height: 54,
+                      child: ElevatedButton(
+                        onPressed: () {},
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppColors.navy,
+                          side: const BorderSide(color: Colors.black12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          elevation: 0,
+                        ),
+                        child: const Text("+ Start creating", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      ),
                     )
                   ],
                 ),
