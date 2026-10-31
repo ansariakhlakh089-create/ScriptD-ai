@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'platform_screen.dart';
 import '../theme.dart';
 
 class VisualsScreen extends StatelessWidget {
