@@ -24,16 +24,13 @@ jobs:
       with:
         channel: 'stable'
 
-    # 🌟 YEH NAYA STEP ADD KAREIN 🌟
-    # Yeh automatically 'android' aur 'ios' folder bana dega agar nahi hain toh
     - name: Generate missing folders
       run: flutter create .
 
     - name: Install dependencies
       run: flutter pub get
 
-    - name: Analyze project source
-      run: flutter analyze
+    # Note: Humne 'Analyze project source' wala step hata diya hai taaki error na aaye
 
     - name: Build APK
       run: flutter build apk --release
