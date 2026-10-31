@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
+import 'script_screen.dart'; // Naya import
 
-class TopicScreen extends StatelessWidget {
+class TopicScreen extends StatefulWidget {
   const TopicScreen({super.key});
+
+  @override
+  State<TopicScreen> createState() => _TopicScreenState();
+}
+
+class _TopicScreenState extends State<TopicScreen> {
+  final TextEditingController _topicController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -11,7 +19,7 @@ class TopicScreen extends StatelessWidget {
         title: const Text("Naya Video", style: TextStyle(fontWeight: FontWeight.bold)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context), // Wapas jaane ke liye
+          onPressed: () => Navigator.pop(context),
         ),
       ),
       body: Padding(
@@ -22,6 +30,7 @@ class TopicScreen extends StatelessWidget {
             const Text("Kis topic par video banana hai?", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.navy)),
             const SizedBox(height: 20),
             TextField(
+              controller: _topicController, // Controller yahan add kiya
               maxLines: 4,
               decoration: InputDecoration(
                 hintText: "Jaise: Bulb ka avishkar kaise hua...",
@@ -35,9 +44,24 @@ class TopicScreen extends StatelessWidget {
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary, 
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+                ),
                 onPressed: () {
-                  // Aage ka logic baad mein
+                  // Check if text is not empty
+                  if (_topicController.text.trim().isNotEmpty) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ScriptScreen(topic: _topicController.text.trim()),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Pehle topic toh likho bhai!")),
+                    );
+                  }
                 },
                 child: const Text("Research Shuru Karein", style: TextStyle(color: Colors.white, fontSize: 16)),
               ),
