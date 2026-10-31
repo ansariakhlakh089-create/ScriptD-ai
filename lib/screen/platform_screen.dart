@@ -120,3 +120,24 @@ class _PlatformScreenState extends State<PlatformScreen> {
     );
   }
 }
+
+// VisualsScreen ke Scaffold mein:
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: SizedBox(
+          height: 54,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => PlatformScreen(topic: topic)),
+              );
+            },
+            child: const Text("Platform Chuno →", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          ),
+        ),
+      ),
