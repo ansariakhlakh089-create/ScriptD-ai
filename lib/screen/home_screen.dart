@@ -41,7 +41,12 @@ class HomeScreen extends StatelessWidget {
                       width: double.infinity,
                       height: 54,
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => const TopicScreen()),
+  );
+},
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: AppColors.navy,
