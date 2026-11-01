@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
+import 'export_screen.dart';
 
 class ScriptScreen extends StatefulWidget {
   final String topic;
@@ -29,7 +30,10 @@ class _ScriptScreenState extends State<ScriptScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Script Ready ✨", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Script Ready ✨",
+          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.navy),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -47,10 +51,17 @@ class _ScriptScreenState extends State<ScriptScreen> {
                     Text(
                       "Research kar raha hoon:\n${widget.topic}...",
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.navy),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.navy,
+                      ),
                     ),
                     const SizedBox(height: 8),
-                    const Text("Sources check kar raha hoon...", style: TextStyle(color: Colors.grey)),
+                    const Text(
+                      "Sources check kar raha hoon...",
+                      style: TextStyle(color: Colors.grey),
+                    ),
                   ],
                 ),
               )
@@ -59,14 +70,32 @@ class _ScriptScreenState extends State<ScriptScreen> {
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(color: Colors.green.shade100, borderRadius: BorderRadius.circular(8)),
-                    child: const Text("✓ RESEARCH COMPLETE", style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold)),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      "✓ RESEARCH COMPLETE",
+                      style: TextStyle(
+                        color: Colors.green,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
-                  Text(widget.topic, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.navy)),
+                  Text(
+                    widget.topic,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.navy,
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   Expanded(
                     child: Container(
+                      width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -84,7 +113,36 @@ class _ScriptScreenState extends State<ScriptScreen> {
                         ),
                       ),
                     ),
-                  )
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ExportScreen(topic: widget.topic),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        "Finalize & Export Karein",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
       ),
