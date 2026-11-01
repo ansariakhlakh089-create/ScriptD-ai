@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
+import '../models/script_package.dart';
+import '../widgets/custom_button.dart';
 import 'export_screen.dart';
 
 class PlatformScreen extends StatelessWidget {
-  final String topic;
-  const PlatformScreen({super.key, required this.topic});
+  final ScriptPackage package;
+  const PlatformScreen({super.key, required this.package});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Platform Details 🚀",
-          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.navy),
-        ),
+        title: const Text('Platform Details 🚀'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -25,7 +24,7 @@ class PlatformScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              "Viral Titles & Metadata",
+              'Viral Titles & Metadata',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -34,62 +33,43 @@ class PlatformScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              "YouTube, Instagram aur Facebook ke liye algorithm-ready details:",
+              'YouTube, Instagram aur Facebook ke liye algorithm-ready details:',
               style: TextStyle(color: Colors.grey, fontSize: 14),
             ),
             const SizedBox(height: 20),
             Expanded(
               child: ListView(
                 children: [
-                  _buildInfoBox(
-                    "🔥 Best Viral Titles (A/B Testing)",
-                    "1. $topic - Asli Sach Jo Koi Nahi Batata!\n"
-                    "2. Is Ek Galti Ne Badal Di Duniya ($topic)\n"
-                    "3. $topic Ki Ansuni Kahani!",
+                  _infoBox(
+                    '🔥 Best Viral Titles (A/B Testing)',
+                    package.titleOptions
+                        .asMap()
+                        .entries
+                        .map((e) => '${e.key + 1}. ${e.value}')
+                        .join('\n'),
                   ),
-                  _buildInfoBox(
-                    "📝 SEO Description",
-                    "Is video mein hum baat karenge '$topic' ke baare mein. Kaise iski shuruat hui aur iske peeche ka asli rahasya kya hai. Video ko end tak zaroor dekhein!",
-                  ),
-                  _buildInfoBox(
-                    "🏷️ Trending Tags",
-                    "#Documentary #HindiFacts #ViralVideo #ScriptDAI #IndianCreators #Knowledge",
-                  ),
-                  _buildInfoBox(
-                    "📊 Best Format & Success Score",
-                    "Recommended Format: Documentary / Storytelling\nPredicted Retention Score: 88%",
+                  _infoBox('📝 SEO Description', package.seoDescription),
+                  _infoBox('🏷️ Trending Tags', package.tags.join(' ')),
+                  _infoBox(
+                    '📊 Best Format & Success Score',
+                    'Recommended Format: ${package.recommendedFormat}\n'
+                    'Predicted Retention Score: ${package.retentionScore}%',
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 54,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+            CustomButton(
+              text: 'Finish & Package Ready Karein',
+              icon: Icons.check,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ExportScreen(package: package),
                   ),
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ExportScreen(topic: topic),
-                    ),
-                  );
-                },
-                child: const Text(
-                  "Finish & Package Ready Karein ✓",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+                );
+              },
             ),
           ],
         ),
@@ -97,7 +77,7 @@ class PlatformScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoBox(String heading, String content) {
+  Widget _infoBox(String heading, String content) {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
