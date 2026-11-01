@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
-import 'export_screen.dart';
+import '../models/script_package.dart';
+import '../widgets/custom_button.dart';
+import 'visuals_screen.dart';
 
 class ScriptScreen extends StatefulWidget {
   final String topic;
@@ -11,16 +13,18 @@ class ScriptScreen extends StatefulWidget {
 }
 
 class _ScriptScreenState extends State<ScriptScreen> {
-  bool isLoading = true;
+  bool _isLoading = true;
+  late ScriptPackage _package;
 
   @override
   void initState() {
     super.initState();
-    // Fake loading delay (3 seconds) to show AI is "researching"
+    // TODO: असली AI (Claude API) से replace करना है
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
         setState(() {
-          isLoading = false;
+          _package = ScriptPackage.demo(widget.topic);
+          _isLoading = false;
         });
       }
     });
@@ -30,10 +34,7 @@ class _ScriptScreenState extends State<ScriptScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Script Ready ✨",
-          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.navy),
-        ),
+        title: const Text('Script Ready ✨'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -41,111 +42,97 @@ class _ScriptScreenState extends State<ScriptScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
-        child: isLoading
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const CircularProgressIndicator(color: AppColors.primary),
-                    const SizedBox(height: 24),
-                    Text(
-                      "Research kar raha hoon:\n${widget.topic}...",
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.navy,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      "Sources check kar raha hoon...",
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ],
-                ),
-              )
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade100,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text(
-                      "✓ RESEARCH COMPLETE",
-                      style: TextStyle(
-                        color: Colors.green,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    widget.topic,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.navy,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.black12),
-                      ),
-                      child: const SingleChildScrollView(
-                        child: Text(
-                          "Hook: Socho, agar yeh cheez na hoti toh kya hota?\n\n"
-                          "Scene 1: Duniya mein jab pehli baar iska idea aaya, logon ne mazaak udaya. Kisi ne socha nahi tha ki yeh itna bada badlav laayega.\n\n"
-                          "Scene 2: Phir aaya ek scientist, jisne apni poori zindagi is cheez ko banane mein laga di.\n\n"
-                          "Scene 3: Aaj hum iske bina apni zindagi imagine nahi kar sakte. Lekin kya aapne kabhi socha hai ki iske peeche ki asli kahani kya hai?\n\n"
-                          "(Yeh ek demo script hai. Aage hum isko Claude AI se connect karenge taaki asli research wali script aaye!)",
-                          style: TextStyle(fontSize: 16, height: 1.6),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ExportScreen(topic: widget.topic),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        "Finalize & Export Karein",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+        child: _isLoading ? _buildLoading() : _buildContent(),
       ),
+    );
+  }
+
+  Widget _buildLoading() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircularProgressIndicator(color: AppColors.primary),
+          const SizedBox(height: 24),
+          Text(
+            'Research kar raha hoon:\n${widget.topic}...',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.navy,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Sources check kar raha hoon...',
+            style: TextStyle(color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.green.shade100,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Text(
+            '✓ RESEARCH COMPLETE',
+            style: TextStyle(
+              color: Colors.green,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          _package.topic,
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: AppColors.navy,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Expanded(
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.black12),
+            ),
+            child: SingleChildScrollView(
+              child: Text(
+                _package.fullScript,
+                style: const TextStyle(fontSize: 16, height: 1.6),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        CustomButton(
+          text: 'Visual Ideas Dekhein',
+          icon: Icons.arrow_forward,
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => VisualsScreen(package: _package),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 }
