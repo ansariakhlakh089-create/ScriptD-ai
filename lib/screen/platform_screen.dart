@@ -1,86 +1,94 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Copy karne ke liye zaroori hai
 import '../theme.dart';
 import 'export_screen.dart';
 
-class PlatformScreen extends StatefulWidget {
+class PlatformScreen extends StatelessWidget {
   final String topic;
   const PlatformScreen({super.key, required this.topic});
-
-  @override
-  State<PlatformScreen> createState() => _PlatformScreenState();
-}
-
-class _PlatformScreenState extends State<PlatformScreen> {
-  String selectedPlatform = "YouTube";
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Platform Chuno", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Platform Details 🚀",
+          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.navy),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: SingleChildScrollView(
+      body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Kahan upload karoge? Uske hisaab se details milengi.", style: TextStyle(color: Colors.grey)),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: ["YouTube", "Instagram Reels", "Shorts", "Facebook"].map((platform) {
-                bool isSelected = selectedPlatform == platform;
-                return GestureDetector(
-                  onTap: () => setState(() => selectedPlatform = platform),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : Colors.white,
-                      border: Border.all(color: isSelected ? AppColors.primary : Colors.black12, width: 2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(platform, style: TextStyle(color: isSelected ? AppColors.primary : Colors.black87, fontWeight: FontWeight.bold)),
-                  ),
-                );
-              }).toList(),
+            const Text(
+              "Viral Titles & Metadata",
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: AppColors.navy,
+              ),
             ),
-            const SizedBox(height: 32),
-            
-            // Titles
-            _buildCopyCard("Title Options", [
-              "AI ka Future: Kya Machines Insaan Se Aage Nikal Jayengi?",
-              "${widget.topic} - The Untold Story! 🔥",
-              "आपको ${widget.topic} के बारे में ये कभी नहीं बताया गया!"
-            ]),
+            const SizedBox(height: 8),
+            const Text(
+              "YouTube, Instagram aur Facebook ke liye algorithm-ready details:",
+              style: TextStyle(color: Colors.grey, fontSize: 14),
+            ),
             const SizedBox(height: 20),
-
-            // Description
-            _buildCopyCard("Description", [
-              "${widget.topic} ke baare mein poori sachchai! Is video mein humne deep research karke sab kuch bataya hai. Agar video pasand aaye toh like aur share karein.\n\n#AI #Technology #India #${widget.topic.replaceAll(' ', '')}"
-            ]),
-            const SizedBox(height: 32),
-
+            Expanded(
+              child: ListView(
+                children: [
+                  _buildInfoBox(
+                    "🔥 Best Viral Titles (A/B Testing)",
+                    "1. $topic - Asli Sach Jo Koi Nahi Batata!\n"
+                    "2. Is Ek Galti Ne Badal Di Duniya ($topic)\n"
+                    "3. $topic Ki Ansuni Kahani!",
+                  ),
+                  _buildInfoBox(
+                    "📝 SEO Description",
+                    "Is video mein hum baat karenge '$topic' ke baare mein. Kaise iski shuruat hui aur iske peeche ka asli rahasya kya hai. Video ko end tak zaroor dekhein!",
+                  ),
+                  _buildInfoBox(
+                    "🏷️ Trending Tags",
+                    "#Documentary #HindiFacts #ViralVideo #ScriptDAI #IndianCreators #Knowledge",
+                  ),
+                  _buildInfoBox(
+                    "📊 Best Format & Success Score",
+                    "Recommended Format: Documentary / Storytelling\nPredicted Retention Score: 88%",
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               height: 54,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => ExportScreen(topic: widget.topic)),
+                    MaterialPageRoute(
+                      builder: (context) => ExportScreen(topic: topic),
+                    ),
                   );
                 },
-                child: const Text("Export Karo →", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                child: const Text(
+                  "Finish & Package Ready Karein ✓",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
           ],
@@ -89,55 +97,37 @@ class _PlatformScreenState extends State<PlatformScreen> {
     );
   }
 
-  Widget _buildCopyCard(String title, List<String> contents) {
+  Widget _buildInfoBox(String heading, String content) {
     return Container(
+      margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.black12)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.black12),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.navy)),
-          const SizedBox(height: 12),
-          ...contents.map((text) => Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(8)),
-            child: Row(
-              children: [
-                Expanded(child: Text(text, style: const TextStyle(fontSize: 14))),
-                IconButton(
-                  icon: const Icon(Icons.copy, size: 18, color: AppColors.primary),
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: text));
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Copied to clipboard!"), duration: Duration(seconds: 1)));
-                  },
-                )
-              ],
+          Text(
+            heading,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColors.navy,
             ),
-          )).toList(),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            content,
+            style: const TextStyle(
+              fontSize: 15,
+              color: Colors.black87,
+              height: 1.5,
+            ),
+          ),
         ],
       ),
     );
   }
 }
-
-// VisualsScreen ke Scaffold mein:
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: SizedBox(
-          height: 54,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => PlatformScreen(topic: topic)),
-              );
-            },
-            child: const Text("Platform Chuno →", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-          ),
-        ),
-      ),
