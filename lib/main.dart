@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'theme.dart';
 import 'state/app_state.dart';
-import 'screen/main_layout.dart';
+import 'screen/home_screen.dart';
 
 void main() {
   runApp(const ScriptDApp());
@@ -28,8 +28,8 @@ class _ScriptDAppState extends State<ScriptDApp> {
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
-            themeMode: _appState.isDarkMode ? ThemeMode.dark : ThemeMode.light, // Real Theme Change
-            home: const MainLayout(),
+            themeMode: _appState.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+            home: const HomeScreen(),
           );
         },
       ),
