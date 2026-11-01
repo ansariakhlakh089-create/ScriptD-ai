@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
+import '../state/app_state.dart';
+import '../widgets/custom_button.dart';
 import 'script_screen.dart';
 
 class TopicScreen extends StatefulWidget {
@@ -18,14 +20,60 @@ class _TopicScreenState extends State<TopicScreen> {
     super.dispose();
   }
 
+  void _handleResearch() {
+    final topic = _topicController.text.trim();
+    if (topic.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pehle topic toh likho bhai!')),
+      );
+      return;
+    }
+
+    final appState = AppStateProvider.of(context);
+    if (!appState.canCreateScript) {
+      _showLimitDialog();
+      return;
+    }
+
+    appState.consumeScriptCredit();
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => ScriptScreen(topic: topic)),
+    );
+  }
+
+  void _showLimitDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Free limit khatam!'),
+        content: const Text(
+          'Aapne is mahine ke saare free scripts use kar liye hain. '
+          'Premium lo aur unlimited scripts banao.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Baad mein'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              AppStateProvider.of(context).enablePremium();
+              Navigator.pop(ctx);
+            },
+            child: const Text('Upgrade (Demo)'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Naya Video",
-          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.navy),
-        ),
+        title: const Text('Naya Video'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -37,7 +85,7 @@ class _TopicScreenState extends State<TopicScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              "Kis topic par video banana hai?",
+              'Kis topic par video banana hai?',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -48,49 +96,16 @@ class _TopicScreenState extends State<TopicScreen> {
             TextField(
               controller: _topicController,
               maxLines: 4,
-              decoration: InputDecoration(
-                hintText: "Jaise: Bulb ka avishkar kaise hua...",
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+              textCapitalization: TextCapitalization.sentences,
+              decoration: const InputDecoration(
+                hintText: 'Jaise: Bulb ka avishkar kaise hua...',
               ),
             ),
             const SizedBox(height: 30),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: () {
-                  if (_topicController.text.trim().isNotEmpty) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ScriptScreen(
-                          topic: _topicController.text.trim(),
-                        ),
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Pehle topic toh likho bhai!"),
-                      ),
-                    );
-                  }
-                },
-                child: const Text(
-                  "Research Shuru Karein",
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
-              ),
+            CustomButton(
+              text: 'Research Shuru Karein',
+              icon: Icons.search,
+              onPressed: _handleResearch,
             ),
           ],
         ),
