@@ -1,7 +1,6 @@
 name: scriptd_ai
 description: "Script Director AI - App for Indian Creators"
 publish_to: 'none'
-
 version: 1.0.0+1
 
 environment:
