@@ -1,15 +1,19 @@
+
 import 'package:flutter/material.dart';
 import 'theme.dart';
 import 'state/app_state.dart';
 import 'state/chat_store.dart';
+import 'screen/home_screen.dart';
 import 'screen/login_screen.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const ScriptDApp());
 }
 
 class ScriptDApp extends StatefulWidget {
   const ScriptDApp({super.key});
+
   @override
   State<ScriptDApp> createState() => _ScriptDAppState();
 }
@@ -30,10 +34,13 @@ class _ScriptDAppState extends State<ScriptDApp> {
             return MaterialApp(
               title: 'ScriptD AI',
               debugShowCheckedModeBanner: false,
-              theme: AppTheme.lightTheme,
-              darkTheme: AppTheme.darkTheme,
-              themeMode: ThemeMode.system,
-              home: const LoginScreen(),
+              theme: AppTheme.lightTheme(_appState.fontStyle),
+              darkTheme: AppTheme.darkTheme(_appState.fontStyle),
+              themeMode:
+                  _appState.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+              home: _appState.isLoggedIn
+                  ? const HomeScreen()
+                  : const LoginScreen(),
             );
           },
         ),
