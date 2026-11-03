@@ -25,20 +25,44 @@ class CustomButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: isOutline ? Colors.white : AppColors.primary,
-          foregroundColor: isOutline ? AppColors.navy : Colors.white,
+          backgroundColor:
+              isOutline ? Colors.white.withOpacity(0.08) : AppColors.primary,
+          foregroundColor: Colors.white,
           disabledBackgroundColor: AppColors.primary.withOpacity(0.5),
-          side: isOutline ? const BorderSide(color: Colors.black12) : BorderSide.none,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          side: isOutline
+              ? const BorderSide(color: Colors.white38, width: 1.2)
+              : BorderSide.none,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
           elevation: isOutline ? 0 : 3,
         ),
         child: isLoading
-            ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2.5, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
+            ? const SizedBox(
+                height: 22,
+                width: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (icon != null) ...[Icon(icon, size: 20), const SizedBox(width: 8)],
-                  Flexible(child: Text(text, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+                  if (icon != null) ...[
+                    Icon(icon, size: 20),
+                    const SizedBox(width: 8),
+                  ],
+                  Flexible(
+                    child: Text(
+                      text,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ],
               ),
       ),
