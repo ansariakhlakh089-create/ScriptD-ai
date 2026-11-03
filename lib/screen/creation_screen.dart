@@ -1,4 +1,3 @@
-// VERSION 5 — Creation: Add to project जुड़ा
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../theme.dart';
@@ -11,11 +10,7 @@ class CreationScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PaletteTheme(
-      dark: AppPalette.slate,
-      light: AppPalette.peanut,
-      child: _CreationBody(creationId: creationId),
-    );
+    return PaletteTheme(darkBg: AppPalette.slate, lightBg: AppPalette.peanut, child: _CreationBody(creationId: creationId));
   }
 }
 
@@ -31,12 +26,7 @@ class _CreationBody extends StatelessWidget {
     if (c == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Creation')),
-        body: Center(
-          child: Text(
-            'Yeh creation ab maujood nahi hai.',
-            style: TextStyle(color: AppText.muted(context)),
-          ),
-        ),
+        body: Center(child: Text('This creation no longer exists.', style: TextStyle(color: AppText.muted(context)))),
       );
     }
 
@@ -51,9 +41,7 @@ class _CreationBody extends StatelessWidget {
               final p = await pickProject(context);
               if (p == null) return;
               store.attachCreation(p.id, c.id);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('"${p.name}" project mein jod di')),
-              );
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added to project "${p.name}"')));
             },
           ),
           IconButton(
@@ -61,9 +49,7 @@ class _CreationBody extends StatelessWidget {
             tooltip: 'Copy',
             onPressed: () {
               Clipboard.setData(ClipboardData(text: c.text));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Copy ho gaya')),
-              );
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Copied to clipboard')));
             },
           ),
           IconButton(
@@ -73,13 +59,10 @@ class _CreationBody extends StatelessWidget {
               showDialog(
                 context: context,
                 builder: (ctx) => AlertDialog(
-                  title: const Text('Creation delete karein?'),
-                  content: const Text('Yeh hamesha ke liye hat jayegi.'),
+                  title: const Text('Delete creation?'),
+                  content: const Text('This will be permanently removed.'),
                   actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Cancel'),
-                    ),
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
                     ElevatedButton(
                       onPressed: () {
                         Navigator.pop(ctx);
@@ -97,10 +80,7 @@ class _CreationBody extends StatelessWidget {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        child: SelectableText(
-          c.text,
-          style: const TextStyle(fontSize: 15, height: 1.6),
-        ),
+        child: SelectableText(c.text, style: const TextStyle(fontSize: 15, height: 1.6)),
       ),
     );
   }
