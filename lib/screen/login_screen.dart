@@ -1,6 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../theme.dart';
-import 'home_screen.dart';
+import '../state/app_state.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -9,114 +10,453 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<Offset> _slideAnimation;
-  late Animation<double> _fadeAnimation;
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _glowController;
+  late final Animation<double> _glowAnimation;
+
+  final String _fullAnimatedLine = 'Solve your Content Creation Problems';
+  String _typedText = '';
+  Timer? _typeTimer;
+  int _charIndex = 0;
+  bool _showEmailBox = false;
+
+  final TextEditingController _emailCtrl = TextEditingController();
+  final TextEditingController _nameCtrl = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200));
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
-    _controller.forward();
+    _glowController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    )..repeat(reverse: true);
+
+    _glowAnimation = CurvedAnimation(
+      parent: _glowController,
+      curve: Curves.easeInOut,
+    );
+
+    _startTypewriter();
+  }
+
+  void _startTypewriter() {
+    _typeTimer?.cancel();
+    _charIndex = 0;
+    _typedText = '';
+    _typeTimer = Timer.periodic(const Duration(milliseconds: 55), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_charIndex < _fullAnimatedLine.length) {
+        setState(() {
+          _charIndex++;
+          _typedText = _fullAnimatedLine.substring(0, _charIndex);
+        });
+      } else {
+        timer.cancel();
+      }
+    });
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _typeTimer?.cancel();
+    _glowController.dispose();
+    _emailCtrl.dispose();
+    _nameCtrl.dispose();
     super.dispose();
   }
 
-  void _login() {
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+  void _handleGoogleContinue() {
+    final nameCtrl = TextEditingController(text: 'Creator');
+    final emailCtrl = TextEditingController(text: 'creator@gmail.com');
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppPalette.slate,
+        title: const Text(
+          'Continue with Google',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtrl,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'Aapka Naam',
+                labelStyle: TextStyle(color: Colors.white70),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: emailCtrl,
+              keyboardType: TextInputType.emailAddress,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'Google Email ID',
+                labelStyle: TextStyle(color: Colors.white70),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              final email = emailCtrl.text.trim();
+              final name = nameCtrl.text.trim();
+              if (email.isEmpty) return;
+              Navigator.pop(ctx);
+              AppStateProvider.of(context).login(email: email, name: name);
+            },
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleEmailLogin() {
+    final email = _emailCtrl.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Kripya sahi email address daalein')),
+      );
+      return;
+    }
+    AppStateProvider.of(context).login(
+      email: email,
+      name: _nameCtrl.text.trim().isNotEmpty ? _nameCtrl.text.trim() : null,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF1A1A2E), Color(0xFF16213E), Color(0xFF0F3460)],
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: SlideTransition(
-                  position: _slideAnimation,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+    return PaletteTheme(
+      bg: AppPalette.slate,
+      child: Scaffold(
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: MediaQuery.of(context).size.height - 80,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // ==================== 1. TOP HEADER ====================
+                  Column(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.primary, width: 2),
-                        ),
-                        child: const Icon(Icons.movie_filter, size: 60, color: AppColors.primary),
-                      ),
-                      const SizedBox(height: 30),
-                      const Text('SCRIPTD AI', style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 2)),
-                      const SizedBox(height: 10),
-                      const Text('Your Content Creation Journey', style: TextStyle(fontSize: 16, color: AppColors.mint, fontWeight: FontWeight.w500)),
-                      const SizedBox(height: 40),
-                      const Text('This is the SCRIPTD.AI', style: TextStyle(fontSize: 18, color: Colors.white70)),
-                      const SizedBox(height: 8),
-                      const Text('Solve your Content Creation Problems', textAlign: TextAlign.center, style: TextStyle(fontSize: 22, color: Colors.white, fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 60),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 54,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.black87,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          ),
-                          onPressed: _login,
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.g_mobiledata, size: 30, color: Colors.blue),
-                              SizedBox(width: 10),
-                              Text('Continue with Google', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                            ],
-                          ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'SCRIPTD AI',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 2.2,
+                          color: Colors.white,
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      const Row(
-                        children: [
-                          Expanded(child: Divider(color: Colors.white30)),
-                          Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('or', style: TextStyle(color: Colors.white54))),
-                          Expanded(child: Divider(color: Colors.white30)),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 54,
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: AppColors.primary, width: 2),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          ),
-                          onPressed: _login,
-                          child: const Text('Enter your email', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Your Content Creation Journey',
+                        style: TextStyle(
+                          fontSize: 14,
+                          letterSpacing: 0.6,
+                          color: Colors.white.withOpacity(0.72),
                         ),
                       ),
                     ],
                   ),
-                ),
+
+                  // ==================== 2. CENTER ANIMATED HERO ====================
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 42),
+                    child: AnimatedBuilder(
+                      animation: _glowAnimation,
+                      builder: (context, _) {
+                        final glow = 0.15 + (_glowAnimation.value * 0.25);
+                        return Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 22,
+                            vertical: 34,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color: AppColors.primary.withOpacity(glow + 0.15),
+                              width: 1.2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withOpacity(glow * 0.5),
+                                blurRadius: 28,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                'This is the',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w400,
+                                  letterSpacing: 1.2,
+                                  color: Colors.white.withOpacity(0.80),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              ShaderMask(
+                                shaderCallback: (bounds) {
+                                  return LinearGradient(
+                                    colors: [
+                                      Colors.white,
+                                       Color.lerp(
+                                        Colors.white,
+                                        AppColors.primary,
+                                        0.35 + (_glowAnimation.value * 0.45),
+                                      )!,
+                                      Colors.white,
+                                    ],
+                                  ).createShader(bounds);
+                                },
+                                child: const Text(
+                                  'SCRIPTD.AI',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 36,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 3.0,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 18),
+                              SizedBox(
+                                height: 52,
+                                child: Center(
+                                  child: Text(
+                                    '$_typedText${_charIndex < _fullAnimatedLine.length ? "▋" : ""}',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w600,
+                                      height: 1.35,
+                                      color: Colors.white.withOpacity(0.92),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  // ==================== 3. BOTTOM LOGIN ACTIONS ====================
+                  Column(
+                    children: [
+                      // Continue with Google (Pill Button)
+                      SizedBox(
+                        width: double.infinity,
+                        height: 54,
+                        child: OutlinedButton(
+                          onPressed: _handleGoogleContinue,
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: Colors.white.withOpacity(0.08),
+                            side: const BorderSide(
+                              color: Colors.white38,
+                              width: 1.2,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 26,
+                                height: 26,
+                                alignment: Alignment.center,
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Text(
+                                  'G',
+                                  style: TextStyle(
+                                    color: AppPalette.slate,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              const Text(
+                                'Continue with Google',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // ------ or ------
+                      Row(
+                        children: [
+                          const Expanded(
+                            child: Divider(color: Colors.white24, thickness: 1),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            child: Text(
+                              'or',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.65),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          const Expanded(
+                            child: Divider(color: Colors.white24, thickness: 1),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Enter your email (Rectangular Box matching sketch)
+                      if (!_showEmailBox)
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: OutlinedButton(
+                            onPressed: () =>
+                                setState(() => _showEmailBox = true),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(
+                                color: Colors.white38,
+                                width: 1.2,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: const Text(
+                              'Enter your email',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 15.5,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.07),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white30),
+                          ),
+                          child: Column(
+                            children: [
+                              TextField(
+                                controller: _nameCtrl,
+                                style: const TextStyle(color: Colors.white),
+                                decoration: const InputDecoration(
+                                  hintText: 'Your Name (optional)',
+                                  hintStyle: TextStyle(color: Colors.white54),
+                                  prefixIcon: Icon(
+                                    Icons.person_outline,
+                                    color: Colors.white70,
+                                  ),
+                                  border: InputBorder.none,
+                                ),
+                              ),
+                              const Divider(color: Colors.white24, height: 1),
+                              TextField(
+                                controller: _emailCtrl,
+                                keyboardType: TextInputType.emailAddress,
+                                style: const TextStyle(color: Colors.white),
+                                onSubmitted: (_) => _handleEmailLogin(),
+                                decoration: const InputDecoration(
+                                  hintText: 'Enter your email',
+                                  hintStyle: TextStyle(color: Colors.white54),
+                                  prefixIcon: Icon(
+                                    Icons.email_outlined,
+                                    color: Colors.white70,
+                                  ),
+                                  border: InputBorder.none,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              SizedBox(
+                                width: double.infinity,
+                                height: 46,
+                                child: ElevatedButton(
+                                  onPressed: _handleEmailLogin,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primary,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Start Creating',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      const SizedBox(height: 22),
+
+                      // Subtle dashed bottom line matching sketch
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: List.generate(
+                          14,
+                          (_) => Container(
+                            width: 12,
+                            height: 1.5,
+                            color: Colors.white24,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
