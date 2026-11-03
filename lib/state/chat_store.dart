@@ -5,12 +5,33 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ChatMessage {
   final String text;
   final bool isUser;
-  final int time;
+  final int time; // millisecondsSinceEpoch
+  final String modeTag; // 'NORMAL_CHAT', 'QUICK_FACT', 'SHORT_SCRIPT', 'LONG_SCRIPT'
+  final String? creationId; // अगर इस मैसेज से कोई स्क्रिप्ट बनी है तो उसका ID
 
-  const ChatMessage(this.text, this.isUser, this.time);
+  const ChatMessage(
+    this.text,
+    this.isUser,
+    this.time, {
+    this.modeTag = 'NORMAL_CHAT',
+    this.creationId,
+  });
 
-  Map<String, dynamic> toJson() => {'t': text, 'u': isUser, 'ms': time};
-  factory ChatMessage.fromJson(Map<String, dynamic> j) => ChatMessage(j['t'] as String, j['u'] as bool, j['ms'] as int);
+  Map<String, dynamic> toJson() => {
+        't': text,
+        'u': isUser,
+        'ms': time,
+        'm': modeTag,
+        if (creationId != null) 'cid': creationId,
+      };
+
+  factory ChatMessage.fromJson(Map<String, dynamic> j) => ChatMessage(
+        j['t'] as String,
+        j['u'] as bool,
+        j['ms'] as int,
+        modeTag: (j['m'] as String?) ?? 'NORMAL_CHAT',
+        creationId: j['cid'] as String?,
+      );
 }
 
 class ChatSession {
@@ -19,8 +40,12 @@ class ChatSession {
   int updated;
   final List<ChatMessage> messages;
 
-  ChatSession({required this.id, required this.title, required this.updated, List<ChatMessage>? messages})
-      : messages = messages ?? [];
+  ChatSession({
+    required this.id,
+    required this.title,
+    required this.updated,
+    List<ChatMessage>? messages,
+  }) : messages = messages ?? [];
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -33,30 +58,61 @@ class ChatSession {
         id: j['id'] as String,
         title: j['title'] as String,
         updated: j['updated'] as int,
-        messages: (j['messages'] as List).map((m) => ChatMessage.fromJson(m as Map<String, dynamic>)).toList(),
+        messages: (j['messages'] as List)
+            .map((m) => ChatMessage.fromJson(m as Map<String, dynamic>))
+            .toList(),
       );
 }
 
+/// AI से बनी हुई स्क्रिप्ट/जवाब, जो "Your Creation" में दिखती है
 class Creation {
   final String id;
   final String title;
   final String text;
   final int time;
+  final String kind; // 'Long video' या 'Short'
 
-  const Creation(this.id, this.title, this.text, this.time);
+  const Creation(
+    this.id,
+    this.title,
+    this.text,
+    this.time, {
+    this.kind = 'Long video',
+  });
 
-  Map<String, dynamic> toJson() => {'id': id, 'title': title, 'text': text, 'time': time};
-  factory Creation.fromJson(Map<String, dynamic> j) => Creation(j['id'] as String, j['title'] as String, j['text'] as String, j['time'] as int);
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'text': text,
+        'time': time,
+        'kind': kind,
+      };
+
+  factory Creation.fromJson(Map<String, dynamic> j) => Creation(
+        j['id'] as String,
+        j['title'] as String,
+        j['text'] as String,
+        j['time'] as int,
+        kind: (j['kind'] as String?) ?? 'Long video',
+      );
 }
 
+/// हर वीडियो प्रोजेक्ट के चरण (यूज़र खुद टिक करता है)
 const List<String> kProjectStages = [
-  'Research', 'Script', 'Visual prompts', 'Images', 'Title & SEO', 'Editing', 'Upload',
+  'Research',
+  'Script',
+  'Visual prompts',
+  'Images',
+  'Title & SEO',
+  'Editing',
+  'Upload',
 ];
 
+/// एक वीडियो का फ़ोल्डर: उसकी चैट, Creation और कौन-सा चरण पूरा हुआ
 class Project {
   final String id;
   String name;
-  String kind;
+  String kind; // 'Long video' या 'Short'
   final int created;
   final List<String> chatIds;
   final List<String> creationIds;
@@ -104,6 +160,7 @@ class ChatStore extends ChangeNotifier {
     _load();
   }
 
+  /// सबसे नई चैट सबसे ऊपर
   List<ChatSession> get chats {
     final l = List<ChatSession>.from(_chats);
     l.sort((a, b) => b.updated.compareTo(a.updated));
@@ -123,24 +180,37 @@ class ChatStore extends ChangeNotifier {
   }
 
   Project? projectById(String id) {
-    for (final p in _projects) { if (p.id == id) return p; }
+    for (final p in _projects) {
+      if (p.id == id) return p;
+    }
     return null;
   }
 
   ChatSession? chatById(String id) {
-    for (final c in _chats) { if (c.id == id) return c; }
+    for (final c in _chats) {
+      if (c.id == id) return c;
+    }
     return null;
   }
 
   Creation? creationById(String id) {
-    for (final c in _creations) { if (c.id == id) return c; }
+    for (final c in _creations) {
+      if (c.id == id) return c;
+    }
     return null;
   }
 
   String _newId() => DateTime.now().microsecondsSinceEpoch.toString();
 
   ChatSession createChat(String title) {
-    final s = ChatSession(id: _newId(), title: title, updated: DateTime.now().millisecondsSinceEpoch);
+    final cleanTitle = title.trim().isEmpty ? 'Nayi Chat' : title.trim();
+    final s = ChatSession(
+      id: _newId(),
+      title: cleanTitle.length > 48
+          ? '${cleanTitle.substring(0, 48)}...'
+          : cleanTitle,
+      updated: DateTime.now().millisecondsSinceEpoch,
+    );
     _chats.add(s);
     _changed();
     return s;
@@ -154,14 +224,33 @@ class ChatStore extends ChangeNotifier {
     _changed();
   }
 
-  void deleteChat(String chatId) {
-    _chats.removeWhere((c) => c.id == chatId);
-    for (final p in _projects) { p.chatIds.remove(chatId); }
+  void renameChat(String chatId, String title) {
+    final s = chatById(chatId);
+    if (s == null) return;
+    s.title = title;
     _changed();
   }
 
-  Creation addCreation(String title, String text) {
-    final c = Creation(_newId(), title, text, DateTime.now().millisecondsSinceEpoch);
+  void deleteChat(String chatId) {
+    _chats.removeWhere((c) => c.id == chatId);
+    for (final p in _projects) {
+      p.chatIds.remove(chatId);
+    }
+    _changed();
+  }
+
+  Creation addCreation(
+    String title,
+    String text, {
+    String kind = 'Long video',
+  }) {
+    final c = Creation(
+      _newId(),
+      title,
+      text,
+      DateTime.now().millisecondsSinceEpoch,
+      kind: kind,
+    );
     _creations.add(c);
     _changed();
     return c;
@@ -169,21 +258,45 @@ class ChatStore extends ChangeNotifier {
 
   void deleteCreation(String id) {
     _creations.removeWhere((c) => c.id == id);
-    for (final p in _projects) { p.creationIds.remove(id); }
+    for (final p in _projects) {
+      p.creationIds.remove(id);
+    }
     _changed();
   }
 
+  // ---------------- Projects ----------------
   Project createProject(String name, String kind) {
-    final p = Project(id: _newId(), name: name, kind: kind, created: DateTime.now().millisecondsSinceEpoch);
+    final p = Project(
+      id: _newId(),
+      name: name,
+      kind: kind,
+      created: DateTime.now().millisecondsSinceEpoch,
+    );
     _projects.add(p);
     _changed();
     return p;
   }
 
+  void renameProject(String id, String name) {
+    final p = projectById(id);
+    if (p == null) return;
+    p.name = name;
+    _changed();
+  }
+
+  void deleteProject(String id) {
+    _projects.removeWhere((p) => p.id == id);
+    _changed();
+  }
+
   void toggleStage(String id, String stage) {
     final p = projectById(id);
     if (p == null) return;
-    if (p.done.contains(stage)) { p.done.remove(stage); } else { p.done.add(stage); }
+    if (p.done.contains(stage)) {
+      p.done.remove(stage);
+    } else {
+      p.done.add(stage);
+    }
     _changed();
   }
 
@@ -226,24 +339,39 @@ class ChatStore extends ChangeNotifier {
       final raw = prefs.getString('chat_store_v1');
       if (raw == null) return;
       final data = jsonDecode(raw) as Map<String, dynamic>;
-      _chats..clear()..addAll((data['chats'] as List).map((e) => ChatSession.fromJson(e as Map<String, dynamic>)));
-      _creations..clear()..addAll((data['creations'] as List).map((e) => Creation.fromJson(e as Map<String, dynamic>)));
-      _projects..clear()..addAll(((data['projects'] as List?) ?? []).map((e) => Project.fromJson(e as Map<String, dynamic>)));
+      _chats
+        ..clear()
+        ..addAll((data['chats'] as List)
+            .map((e) => ChatSession.fromJson(e as Map<String, dynamic>)));
+      _creations
+        ..clear()
+        ..addAll((data['creations'] as List)
+            .map((e) => Creation.fromJson(e as Map<String, dynamic>)));
+      _projects
+        ..clear()
+        ..addAll(((data['projects'] as List?) ?? [])
+            .map((e) => Project.fromJson(e as Map<String, dynamic>)));
       notifyListeners();
-    } catch (_) {}
+    } catch (_) {
+      // सेव किया हुआ डेटा खराब हो तो खाली से शुरू करो
+    }
   }
 
   Future<void> _save() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('chat_store_v1', jsonEncode({
-        'chats': _chats.map((c) => c.toJson()).toList(),
-        'creations': _creations.map((c) => c.toJson()).toList(),
-        'projects': _projects.map((p) => p.toJson()).toList(),
-      }));
+      await prefs.setString(
+        'chat_store_v1',
+        jsonEncode({
+          'chats': _chats.map((c) => c.toJson()).toList(),
+          'creations': _creations.map((c) => c.toJson()).toList(),
+          'projects': _projects.map((p) => p.toJson()).toList(),
+        }),
+      );
     } catch (_) {}
   }
 
+  /// "3/11/2026  14:05" जैसा समय
   static String formatTime(int ms) {
     final d = DateTime.fromMillisecondsSinceEpoch(ms);
     String two(int n) => n.toString().padLeft(2, '0');
@@ -252,13 +380,23 @@ class ChatStore extends ChangeNotifier {
 }
 
 class ChatStoreProvider extends InheritedNotifier<ChatStore> {
-  const ChatStoreProvider({super.key, required ChatStore store, required super.child}) : super(notifier: store);
+  const ChatStoreProvider({
+    super.key,
+    required ChatStore store,
+    required super.child,
+  }) : super(notifier: store);
 
+  /// बदलाव पर स्क्रीन को दोबारा बनाने के लिए (build में)
   static ChatStore of(BuildContext context) {
-    return context.dependOnInheritedWidgetOfExactType<ChatStoreProvider>()!.notifier!;
+    return context
+        .dependOnInheritedWidgetOfExactType<ChatStoreProvider>()!
+        .notifier!;
   }
-  
+
+  /// सिर्फ़ पढ़ने/लिखने के लिए (initState या बटन दबाने पर)
   static ChatStore read(BuildContext context) {
-    return context.getInheritedWidgetOfExactType<ChatStoreProvider>()!.notifier!;
+    return context
+        .getInheritedWidgetOfExactType<ChatStoreProvider>()!
+        .notifier!;
   }
 }
