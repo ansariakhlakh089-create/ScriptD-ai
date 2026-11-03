@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'state/app_state.dart';
 
 class AppColors {
   static const Color primary = Color(0xFFFF6B35);
@@ -7,132 +6,118 @@ class AppColors {
   static const Color mint = Color(0xFF00D9A3);
   static const Color background = Color(0xFFFAFAFA);
   static const Color darkBackground = Color(0xFF121212);
-}
 
-/// आपकी मूल पैलेट के रंग (बिल्कुल वही UI रखा गया है)
-class AppPalette {
-  static const Color slate = Color(0xFF54474E); // Chat + Settings + Plan स्क्रीन
-  static const Color pebble = Color(0xFF93847F); // Home स्क्रीन
-  static const Color wool = Color(0xFFC7BEAD); // Light mode विकल्प
-  static const Color peanut = Color(0xFFBB9C87); // Light mode कार्ड/बैकग्राउंड
-}
-
-/// Version 5 और सभी स्क्रीन्स के लिए टेक्स्ट हेल्पर
-class AppText {
-  static Color muted(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return isDark ? Colors.white70 : Colors.black54;
+  /// withOpacity की जगह (नए Flutter में withOpacity deprecated है)
+  static Color fade(Color c, double opacity) {
+    final o = opacity < 0 ? 0.0 : (opacity > 1 ? 1.0 : opacity);
+    return c.withAlpha((o * 255).round());
   }
 }
 
+/// तुम्हारी palette के रंग
+class AppPalette {
+  static const Color slate = Color(0xFF54474E);
+  static const Color pebble = Color(0xFF93847F);
+  static const Color wool = Color(0xFFC7BEAD);
+  static const Color peanut = Color(0xFFBB9C87);
+}
+
+/// टेक्स्ट के रंग — लाइट/डार्क दोनों में सही दिखें
+class AppText {
+  static bool isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  static Color fg(BuildContext context) =>
+      isDark(context) ? Colors.white : const Color(0xFF241C20);
+
+  static Color muted(BuildContext context) =>
+      isDark(context) ? Colors.white70 : Colors.black54;
+}
+
 /// किसी स्क्रीन को palette का बैकग्राउंड देने वाला wrapper।
-/// यह पुराने `bg:` और नए Version 5 के `dark:` / `light:` दोनों को सपोर्ट करता है।
+/// डार्क मोड में [dark] रंग, लाइट मोड में [light] रंग।
+/// अंदर के कार्ड/टेक्स्ट/आइकन अपने आप उसी के हिसाब से बदलते हैं।
 class PaletteTheme extends StatelessWidget {
-  final Color? bg;
-  final Color? dark;
-  final Color? light;
+  final Color dark;
+  final Color light;
   final Widget child;
 
   const PaletteTheme({
     super.key,
-    this.bg,
-    this.dark,
-    this.light,
+    required this.dark,
+    required this.light,
     required this.child,
   });
 
   @override
   Widget build(BuildContext context) {
-    final appState = AppStateProvider.maybeOf(context);
-    final isDark = appState?.isDarkMode ?? true;
-    final fontStyle = appState?.fontStyle ?? 'Default';
-
-    final Color activeBg = bg ??
-        (isDark
-            ? (dark ?? AppPalette.slate)
-            : (light ?? AppPalette.pebble));
-
-    final String? fontFamily = _resolveFontFamily(fontStyle);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final brightness = isDark ? Brightness.dark : Brightness.light;
+    final bg = isDark ? dark : light;
+    final fg = isDark ? Colors.white : const Color(0xFF241C20);
 
     final base = ThemeData(
       useMaterial3: true,
-      brightness: Brightness.dark,
-      fontFamily: fontFamily,
+      brightness: brightness,
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primary,
-        brightness: Brightness.dark,
+        brightness: brightness,
       ),
     );
 
-    // कार्ड का रंग: बैकग्राउंड से थोड़ा हल्का
-    final card = Color.alphaBlend(Colors.white.withOpacity(0.10), activeBg);
+    // कार्ड का रंग: बैकग्राउंड से थोड़ा अलग
+    final card = Color.alphaBlend(
+      isDark ? Colors.white.withAlpha(26) : Colors.white.withAlpha(90),
+      bg,
+    );
 
     return Theme(
       data: base.copyWith(
-        scaffoldBackgroundColor: activeBg,
+        scaffoldBackgroundColor: bg,
         cardColor: card,
-        dividerColor: Colors.white24,
-        iconTheme: const IconThemeData(color: Colors.white),
+        dividerColor: isDark ? Colors.white24 : Colors.black26,
+        iconTheme: IconThemeData(color: fg),
+        textTheme: base.textTheme.apply(bodyColor: fg, displayColor: fg),
         appBarTheme: AppBarTheme(
-          backgroundColor: activeBg,
+          backgroundColor: bg,
           elevation: 0,
-          foregroundColor: Colors.white,
-          iconTheme: const IconThemeData(color: Colors.white),
+          scrolledUnderElevation: 0,
+          foregroundColor: fg,
+          iconTheme: IconThemeData(color: fg),
         ),
-        drawerTheme: DrawerThemeData(backgroundColor: activeBg),
+        drawerTheme: DrawerThemeData(backgroundColor: bg),
       ),
       child: child,
     );
   }
-
-  static String? _resolveFontFamily(String style) {
-    switch (style) {
-      case 'Serif (Classic)':
-        return 'serif';
-      case 'Monospace (Script)':
-        return 'monospace';
-      default:
-        return null;
-    }
-  }
 }
 
 class AppTheme {
-  static ThemeData lightTheme([String fontStyle = 'Default']) {
-    final fontFamily = PaletteTheme._resolveFontFamily(fontStyle);
+  static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
-      fontFamily: fontFamily,
       primaryColor: AppColors.primary,
       scaffoldBackgroundColor: AppColors.background,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primary,
-        brightness: Brightness.light,
-      ),
+          seedColor: AppColors.primary, brightness: Brightness.light),
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        iconTheme: IconThemeData(color: AppColors.navy),
-      ),
+          backgroundColor: AppColors.background,
+          elevation: 0,
+          iconTheme: IconThemeData(color: AppColors.navy)),
     );
   }
 
-  static ThemeData darkTheme([String fontStyle = 'Default']) {
-    final fontFamily = PaletteTheme._resolveFontFamily(fontStyle);
+  static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,
-      fontFamily: fontFamily,
       primaryColor: AppColors.primary,
       scaffoldBackgroundColor: AppColors.darkBackground,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primary,
-        brightness: Brightness.dark,
-      ),
+          seedColor: AppColors.primary, brightness: Brightness.dark),
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.darkBackground,
-        elevation: 0,
-        iconTheme: IconThemeData(color: Colors.white),
-      ),
+          backgroundColor: AppColors.darkBackground,
+          elevation: 0,
+          iconTheme: IconThemeData(color: Colors.white)),
     );
   }
 }
