@@ -8,45 +8,62 @@ class AppColors {
   static const Color darkBackground = Color(0xFF121212);
 }
 
-/// तुम्हारी palette के रंग (इमेज से निकाले हुए)
 class AppPalette {
-  static const Color slate = Color(0xFF54474E); // Chat + Settings (+ Plan) स्क्रीन
-  static const Color pebble = Color(0xFF93847F); // Home स्क्रीन
-  static const Color wool = Color(0xFFC7BEAD); // अभी इस्तेमाल नहीं हो रहा
-  static const Color peanut = Color(0xFFBB9C87); // अभी इस्तेमाल नहीं हो रहा
+  static const Color slate = Color(0xFF54474E);
+  static const Color pebble = Color(0xFF93847F);
+  static const Color wool = Color(0xFFC7BEAD);
+  static const Color peanut = Color(0xFFBB9C87);
 }
 
-/// किसी स्क्रीन को palette का बैकग्राउंड देने वाला wrapper।
-/// अंदर के सारे कार्ड/टेक्स्ट/आइकन इसी के हिसाब से अपने आप बदलते हैं।
+class AppText {
+  static Color muted(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? Colors.white70
+        : Colors.black54;
+  }
+}
+
 class PaletteTheme extends StatelessWidget {
-  final Color bg;
+  final Color darkBg;
+  final Color lightBg;
   final Widget child;
-  const PaletteTheme({super.key, required this.bg, required this.child});
+
+  const PaletteTheme({
+    super.key,
+    required this.darkBg,
+    required this.lightBg,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? darkBg : lightBg;
+
     final base = ThemeData(
       useMaterial3: true,
-      brightness: Brightness.dark,
+      brightness: isDark ? Brightness.dark : Brightness.light,
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primary,
-        brightness: Brightness.dark,
+        brightness: isDark ? Brightness.dark : Brightness.light,
       ),
     );
-    // कार्ड का रंग: बैकग्राउंड से थोड़ा हल्का
-    final card = Color.alphaBlend(Colors.white.withOpacity(0.10), bg);
+
+    final card = isDark
+        ? Color.alphaBlend(Colors.white.withOpacity(0.10), bg)
+        : Color.alphaBlend(Colors.black.withOpacity(0.05), bg);
 
     return Theme(
       data: base.copyWith(
         scaffoldBackgroundColor: bg,
         cardColor: card,
-        dividerColor: Colors.white24,
-        iconTheme: const IconThemeData(color: Colors.white),
+        dividerColor: isDark ? Colors.white24 : Colors.black12,
+        iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black87),
         appBarTheme: AppBarTheme(
           backgroundColor: bg,
           elevation: 0,
-          foregroundColor: Colors.white,
-          iconTheme: const IconThemeData(color: Colors.white),
+          foregroundColor: isDark ? Colors.white : Colors.black87,
+          iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black87),
         ),
         drawerTheme: DrawerThemeData(backgroundColor: bg),
       ),
