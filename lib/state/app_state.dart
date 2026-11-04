@@ -23,6 +23,7 @@ class AppState extends ChangeNotifier {
   String _defaultTone = 'Documentary';
   String _fontStyle = 'Default';
   List<String> _feedbackHistory = [];
+  
 
   // Getters
   bool get isLoggedIn => _isLoggedIn;
