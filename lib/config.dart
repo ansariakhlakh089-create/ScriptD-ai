@@ -1,9 +1,18 @@
+/// ScriptD AI — केंद्रीय कॉन्फ़िगरेशन फ़ाइल (Central Config)
+/// यदि आपके प्रोजेक्ट में `lib/config.dart` फ़ाइल है, तो इसे वहाँ रख सकते हैं।
+class AppConfig {
+  static const String appName = 'ScriptD AI';
+  static const String appTagline = 'Your Content Creation Journey';
+  static const String appVersion = '1.0.0';
 
-/// ऐप की बुनियादी सेटिंग्स — एक ही जगह।
+  /// अभी लोकल रियल मोड चालू है (true करने पर ऑनलाइन API इस्तेमाल होगी)
+  static const bool useOnlineApi = false;
 
-const String kAppName = 'ScriptD AI';
-const String kAppVersion = '1.0.0';
+  /// भविष्य में ऑनलाइन API जोड़ने के लिए एंडपॉइंट (OpenRouter / Custom Backend)
+  static const String apiBaseUrl = 'https://openrouter.ai/api/v1/chat/completions';
 
-/// Help & feedback वाला ईमेल। यहाँ अपना असली सपोर्ट ईमेल लिखें,
-/// जैसे 'support@yourdomain.com'। खाली रहने पर "ईमेल भेजें" बटन नहीं दिखेगा।
-const String kSupportEmail = '';
+  /// फ्री प्लान और टॉप-अप की डिफ़ॉल्ट सीमाएँ
+  static const int defaultFreeScripts = 2;
+  static const int shortPackScripts = 5; // Rs 19 pack
+  static const int longPackScripts = 2; // Rs 49 pack
+}
