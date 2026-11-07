@@ -1,6 +1,4 @@
-import { NextResponse } from 'next/server';
+import { auth } from "@/lib/auth";
+import { toNextJsHandler } from "better-auth/next-js";
 
-export async function POST(req: Request) {
-  // Payment gateway (Razorpay/Stripe) ka webhook yahan aayega
-  return NextResponse.json({ received: true });
-}
+export const { GET, POST } = toNextJsHandler(auth);
