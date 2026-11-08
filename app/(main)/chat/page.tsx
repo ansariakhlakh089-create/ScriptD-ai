@@ -1,6 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from 'next/navigation'; // Next.js hook
+
+// Component ke andar:
+const searchParams = useSearchParams();
+const urlProjectId = searchParams.get('id');
+
+useEffect(() => {
+  if (urlProjectId) {
+    setProjectId(urlProjectId);
+    // UI automatically polling route se data utha lega aur "DONE" state mein tabs dikha dega.
+  }
+}, [urlProjectId]);
+
 
 export default function ChatPage() {
   const [activeTab, setActiveTab] = useState("chat"); // 'chat', 'script', 'v-prompt'
