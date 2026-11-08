@@ -1,50 +1,41 @@
-// middleware.ts (Project ke root folder mein banayein, app/ ke andar nahi)
-
+// middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// Memory mein IP aur unke request count ka record rakhne ke liye
-const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
-
-const LIMIT = 5; // Ek IP 1 minute mein sirf 5 baar API call kar sakta hai
-const WINDOW_MS = 60 * 1000; // 1 minute ka timer
-
-export function middleware(req: NextRequest) {
-  // Sirf API generate route par limit lagani hai
-  if (req.nextUrl.pathname.startsWith('/api/generate')) {
+export function middleware(request: NextRequest) {
+  // Sirf API routes par rate limiting aur IP tracking lagayenge
+  if (request.nextUrl.pathname.startsWith('/api/generate') || request.nextUrl.pathname.startsWith('/api/chat')) {
     
-    // User ka IP address nikaalo
-    const ip = req.ip || req.headers.get('x-forwarded-for') || 'unknown-ip';
-    const now = Date.now();
+    // Cloudflare, Vercel ya standard headers se IP nikalna
+    const ip = request.headers.get('x-forwarded-for') ?? 
+               request.headers.get('x-real-ip') ?? 
+               '127.0.0.1';
 
-    const rateData = rateLimitMap.get(ip);
+    // Headers me IP set kar rahe hain taaki API route usko access kar sake
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-user-ip', ip);
 
-    if (!rateData) {
-      // Agar naya user hai
-      rateLimitMap.set(ip, { count: 1, lastReset: now });
-    } else {
-      // Agar time window (1 minute) khatam ho gaya hai, toh reset karo
-      if (now - rateData.lastReset > WINDOW_MS) {
-        rateLimitMap.set(ip, { count: 1, lastReset: now });
-      } else {
-        // Agar limit cross ho gayi hai
-        if (rateData.count >= LIMIT) {
-          return NextResponse.json(
-            { error: "Bhai, thoda aaram karo! 1 minute baad try karna." },
-            { status: 429 }
-          );
-        }
-        // Count badhao
-        rateData.count++;
-      }
+    // Basic Auth Check: Agar authorization header (Token) nahi hai toh reject
+    // Note: Agar NextAuth use kar rahe hain toh logic thoda alag hoga, par concept yahi rahega
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized Request. Login required." },
+        { status: 401 }
+      );
     }
+
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
   }
 
-  // Agar limit ke andar hai, toh aage jaane do
   return NextResponse.next();
 }
 
-// Ye batata hai ki middleware sirf API routes par chalega
+// Middleware kahan chalega uski setting
 export const config = {
   matcher: '/api/:path*',
 };
