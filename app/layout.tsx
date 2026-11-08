@@ -1,22 +1,26 @@
-import './globals.css'; // Ye line sabse zaroori hai
+// app/layout.tsx
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
 
-export const metadata = {
-  title: 'AI Content Creator',
-  description: 'Create scripts and visuals with AI',
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "Vistai - AI Script & Visual Prompt Generator",
+  description: "Generate amazing scripts and visual prompts instantly.",
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <html lang="en">
-      <body>
-        <nav className="p-4 bg-gray-900 text-white font-bold text-xl border-b border-gray-700">
-          🎬 AI Content Creator
-        </nav>
-        {children}
+      <body className={inter.className}>
+        <main className="min-h-screen bg-gray-50">
+          {children}
+        </main>
       </body>
     </html>
   );
