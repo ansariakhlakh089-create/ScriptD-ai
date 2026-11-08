@@ -1,43 +1,111 @@
 // lib/ai-models.ts
+import { getModelForTask, PlanType } from './model-registry';
+import { buildScriptPrompt, buildVPromptInstruction } from './prompts';
 
-// 1. Perplexity (Research)
-export async function callPerplexity(query: string) {
-  // Kal yahan asli API call aayegi
-  return `Research data for: ${query} (API Key missing)`;
-}
+// OpenRouter API URL aur Key (Environment variable se aayegi)
+const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
+const API_KEY = process.env.OPENROUTER_API_KEY;
 
-// 2. Groq (Script - Free Plan)
-export async function callGroqScript(research: string, tone: string) {
-  const apiKey = process.env.GROQ_API_KEY;
-  
-  // Agar key nahi hai, toh dummy response dega taaki app crash na ho
-  if (!apiKey) {
-    await new Promise(r => setTimeout(r, 1500)); // Fake delay
-    return `[Dummy Script - API Key Missing] Here is a ${tone} script based on your research.`;
-  }
-
-  // Jab key hogi, toh ye asli call chalegi
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+/**
+ * Ye core function hai jo OpenRouter ko call karta hai.
+ */
+async function fetchFromOpenRouter(model: string, messages: any[], expectJson: boolean = false) {
+  const response = await fetch(OPENROUTER_API_URL, {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
+      "Authorization": `Bearer ${API_KEY}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": "https://aapka-app-domain.com", // OpenRouter ke liye zaroori
+      "X-Title": "My AI App",
     },
     body: JSON.stringify({
-      model: "llama3-8b-8192",
-      messages: [
-        { role: "system", content: `Write a ${tone} script under 123 words.` },
-        { role: "user", content: research }
-      ]
-    })
+      model: model,
+      messages: messages,
+      response_format: expectJson ? { type: "json_object" } : undefined,
+    }),
   });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(`OpenRouter Error (${model}): ${JSON.stringify(errorData)}`);
+  }
+
   const data = await response.json();
   return data.choices[0].message.content;
 }
 
-// 3. Gemini (Visuals - Free Plan)
-export async function callGeminiVisuals(script: string) {
-  // Kal yahan asli API call aayegi
-  await new Promise(r => setTimeout(r, 1000));
-  return `Scene 1 (0-10s): Wide shot based on script.\nScene 2 (10-20s): Close up shot.`;
+/**
+ * Fallback Logic: Ek model latke toh dusre par jaye
+ */
+async function executeWithFallback(task: any, plan: PlanType, messages: any[], expectJson: boolean = false) {
+  const models = getModelForTask(task, plan);
+  
+  try {
+    // Pehle Primary Model try karo
+    console.log(`Trying Primary Model: ${models.primary}`);
+    return await fetchFromOpenRouter(models.primary, messages, expectJson);
+  } catch (primaryError) {
+    console.warn(`Primary Model Failed: ${models.primary}. Switching to Backup: ${models.backup}`);
+    
+    try {
+      // Agar Primary fail hua toh Backup Model try karo
+      return await fetchFromOpenRouter(models.backup, messages, expectJson);
+    } catch (backupError) {
+      console.error(`Backup Model also failed: ${models.backup}`);
+      // Agar dono fail ho gaye toh error throw karo, taaki credits NA katein
+      throw new Error("API_UNAVAILABLE_CREDITS_SAFE");
+    }
+  }
 }
+
+// --------------------------------------------------------
+// SPECIFIC TASK FUNCTIONS
+// --------------------------------------------------------
+
+// 1. Research (Perplexity)
+export const performResearch = async (topic: string, plan: PlanType) => {
+  const messages = [
+    { role: "system", content: "You are a highly capable research assistant. Only return factual data and real sources/links. Do not invent links." },
+    { role: "user", content: `Research thoroughly about: ${topic}. Give me detailed facts and source links.` }
+  ];
+  return await executeWithFallback("RESEARCH", plan, messages);
+};
+
+// 2. Script Writing (Claude / Groq)
+export const generateScript = async (
+  topic: string, 
+  type: string, 
+  tone: string, 
+  researchFacts: string, 
+  plan: PlanType
+) => {
+  // Part 2 wale dynamic prompt ka use
+  const prompt = buildScriptPrompt(topic, type, tone, researchFacts, plan);
+  
+  const messages = [
+    { role: "user", content: prompt }
+  ];
+  return await executeWithFallback("SCRIPT", plan, messages);
+};
+
+// 3. Visual Prompts (Grok / Gemini) - Strict JSON Validation
+export const generateVPrompts = async (scriptContent: string, plan: PlanType) => {
+  const prompt = buildVPromptInstruction(scriptContent, plan);
+  
+  const messages = [
+    { role: "user", content: prompt }
+  ];
+  
+  // expectJson = true bheja hai taaki output hamesha JSON object/array aaye
+  const rawOutput = await executeWithFallback("VPROMPT", plan, messages, true);
+  
+  // JSON ki strict jaanch (Validation)
+  try {
+    const parsedData = JSON.parse(rawOutput);
+    // Yahan aap check kar sakte ho ki 'sceneNumber' aur 'visualPrompt' field hai ya nahi
+    return parsedData; 
+  } catch (error) {
+    console.error("JSON Parsing Error in V-Prompt:", error);
+    throw new Error("VPROMPT_FORMAT_ERROR");
+  }
+};
