@@ -1,23 +1,14 @@
-import "server-only";
-
-function read(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`Missing environment variable: ${name}`);
-  }
-  return value;
-}
-
+// lib/env.ts
 export const env = {
-  get databaseUrl() { return read("DATABASE_URL"); },
-  get authSecret() { return read("AUTH_SECRET"); },
-  get googleClientId() { return read("GOOGLE_CLIENT_ID"); },
-  get googleClientSecret() { return read("GOOGLE_CLIENT_SECRET"); },
-  get anthropicKey() { return read("ANTHROPIC_API_KEY"); },
-  get perplexityKey() { return read("PERPLEXITY_API_KEY"); },
-  get xaiKey() { return read("XAI_API_KEY"); },
-  get geminiKey() { return read("GEMINI_API_KEY"); },
-  get razorpayKeyId() { return read("RAZORPAY_KEY_ID"); },
-  get razorpayKeySecret() { return read("RAZORPAY_KEY_SECRET"); },
-  get razorpayWebhookSecret() { return read("RAZORPAY_WEBHOOK_SECRET"); },
+  DATABASE_URL: process.env.DATABASE_URL as string,
+  OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY as string,
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY as string,
+  NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
 };
+
+// App start hote hi check karo
+Object.entries(env).forEach(([key, value]) => {
+  if (!value) {
+    console.warn(`⚠️ Warning: Environment variable ${key} is missing.`);
+  }
+});
