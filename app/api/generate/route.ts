@@ -1,4 +1,7 @@
 // app/api/generate/route.ts
+export const maxDuration = 60; // 60 seconds (Hobby plan limit) ya 300 (Pro plan limit)
+export const dynamic = 'force-dynamic'; // Caching disable karne ke liye
+
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { checkAndUpdateLimits } from '@/lib/user-limits';
