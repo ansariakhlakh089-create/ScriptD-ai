@@ -1,46 +1,10 @@
-# 🎬 ScriptD AI
-
-**ScriptD AI** is an intelligent assistant built specifically for content creators (YouTubers, Reel Makers, Documentarians, and Storytellers). It bridges the gap between writing a script and creating the final video.
-
-## 🚀 The Problem We Solve
-Creators often struggle with:
-1. Finding the right topic and format.
-2. Writing scripts that retain audience attention.
-3. Matching their script with the right visuals.
-4. Optimizing titles and descriptions for platform algorithms.
-
-## ✨ Key Features
-
-### 🆓 Normal (Free) Plan:
-- **Deep Research:** AI researches sources to suggest the best format and gives success predictions.
-- **High-Quality Script:** Story-driven scripts with built-in retention hooks.
-- **Visualization Front:** Scene-by-scene visual descriptions for the creator.
-- **Basic Metadata:** Platform-ready titles and descriptions.
-- **Credit System:** Users get 2 free scripts. Additional scripts can be unlocked via ads or payments.
-
-### 👑 Premium Plan:
-- **Everything in Normal.**
-- **Scene-wise Image Generation:** AI generates exact images based on the script.
-- **Multi-platform Optimization:** Advanced A/B testing titles for YouTube, Instagram, and Facebook.
-- **Unlimited Scripts:** No credit limits.
-
-## 🛠️ Tech Stack
-- **Frontend:** Flutter (Mobile App)
-- **Database:** Shared Preferences (Local Storage for Chats, Projects, and Settings)
-- **AI Engine:** Claude API / Gemini (via HTTP Integration)
-- **Theme:** Strictly controlled by the device's system settings (Dark/Light mode).
-- **Language:** 100% English.
-
-## ⚙️ How to Run (Development)
-
-1. Clone the repository.
-2. Run `flutter pub get` to install dependencies.
-3. Open `lib/config.dart` and replace `'YOUR_API_KEY_HERE'` with your actual Claude/Gemini API key.
-4. Run the app using `flutter run`.
-
-## ⚖️ License & Copyright
-**© 2024 ScriptD AI (AKHLAKH ANSARI). ALL RIGHTS RESERVED.**
-This is proprietary software. Unauthorized copying, modification, or distribution of this project via any medium is strictly prohibited.
-
----
-*Made with ❤️ for Creators.*
+Creator AI Studio (my-ai-app)
+Content Creators ke liye banaya gaya 4-AI Multi-Model Web App (Next.js App Router + TypeScript + Prisma + Tailwind CSS), jo kisi bhi Topic, Type (Documentary, Comedy, Horror, Explainer) aur Tone ke hisaab se Grounded Research + Roadmap, Unfiltered Script, aur Line-by-Line Selective Visual Prompts + Document Checklists generate karta hai.
+1. Core Workflow (3-Tab Architecture)
+Use the Chat Tab for Research, Documents & Roadmap: User apna Idea, Topic, Type aur Tone chunta hai. System sabse pehle Perplexity Agent API aur OpenAI GPT-6 Luna ki madad se verified links, official documents, archival sources, voiceover modulation guide, editing instructions, aur script ka rough dhacha (Roadmap) banata hai.
+Trigger Automatic Script Generation Without Extra Buttons: Jaise hi roadmap_done status aata hai, user ke wallet se 10 Credits kat-te hain aur bina kisi alag button ke Claude Sonnet 5.5 apne aap script likhna shuru kar deta hai. Chat mein message aata hai: "Aapki script taiyar ho rahi hai, kuch second ya minute ruko..." aur upar Credits ke paas working indicator chalta rehta hai.
+View Title, Unfiltered Script, Description & Tags in the Script Tab: Jab tak script likhi ja rahi hai, Script tab mein "Searching / Writing..." dikhta hai. Script poori hote hi (script_done) Chat mein ek clickable Script Ready Card aata hai aur Script tab mein sabse upar Engaging Video Title, beech mein 10-Second Line-by-Line Unfiltered Script, aur aakhir mein Video Description + SEO Tags dikhte hain.
+Analyze Line-by-Line Visuals in the V-Prompt Tab: Script banne ke turant baad xAI Grok 4.7 poori script ko line-by-line khangalta hai (writing_vprompt \rightarrow done):
+Generate AI Image Prompts Only Where Needed: Jin scenes mein cinematic visual ya character action chahiye, sirf unke liye copy-ready Prompt box banta hai.
+Provide Interactive Checkboxes for Source/Document Proofs: Jahan kisi research paper, sarkari notice, news article, ya archival letter ka screenshot lagana hai, wahan fokat ka AI image prompt nahi banta—balki Editor Instruction + Checkbox ([ ]) + Source Link milta hai.
+2. 4-Company AI Stack & Cost Breakdown (Per 10-Minute Video)
