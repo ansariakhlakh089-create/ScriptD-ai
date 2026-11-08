@@ -10,7 +10,22 @@ datasource db {
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
-  plan      String   @default("FREE")
-  tokens    Int      @default(3000)
-  createdAt DateTime @default(now())
+  credits   Int      @default(5) // User ke credits
+  chats     Chat[]
+}
+
+model Chat {
+  id         String   @id @default(cuid())
+  userId     String
+  topic      String
+  type       String
+  tone       String
+  status     String   @default("researching") // researching, writing_script, done
+  
+  research   String?  @db.Text
+  script     String?  @db.Text
+  vPrompt    String?  @db.Text
+  
+  user       User     @relation(fields: [userId], references: [id])
+  createdAt  DateTime @default(now())
 }
