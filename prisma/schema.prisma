@@ -3,29 +3,60 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "postgresql" // Database connection
   url      = env("DATABASE_URL")
 }
 
+// User Table: Limits, Verification, aur Credits track karne ke liye
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  credits   Int      @default(5) // User ke credits
-  chats     Chat[]
+  id                String    @id @default(cuid())
+  email             String    @unique
+  emailVerified     Boolean   @default(false) // Fake accounts rokne ke liye
+  lastIpAddress     String?   // Device/IP rate limiting ke liye
+  
+  plan              String    @default("FREE") // FREE or PAID
+  credits           Float     @default(0.0)    // Token cost decimal mein
+  
+  // 24-Hour Limits Tracking
+  chatsToday        Int       @default(0)
+  messagesToday     Int       @default(0)
+  lastResetDate     DateTime  @default(now())
+
+  projects          Project[]
+  createdAt         DateTime  @default(now())
 }
 
-model Chat {
-  id         String   @id @default(cuid())
-  userId     String
-  topic      String
-  type       String
-  tone       String
-  status     String   @default("researching") // researching, writing_script, done
+// Global Research Cache: API cost bachane ke liye (Anonymized)
+model ResearchCache {
+  id              String   @id @default(cuid())
+  topic           String   @unique // Same topic aane par yahan se data uthayenge
+  perplexityData  String   @db.Text
+  sourceLinks     Json     // Sirf Perplexity ke links yahan rahenge
+  createdAt       DateTime @default(now())
+}
+
+// Main Chat & Project Table (Strictly Private)
+model Project {
+  id          String        @id @default(cuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
   
-  research   String?  @db.Text
-  script     String?  @db.Text
-  vPrompt    String?  @db.Text
+  topic       String
+  scriptType  String        @default("SHORT") // Free walo ke liye default
+  tone        String
   
-  user       User     @relation(fields: [userId], references: [id])
-  createdAt  DateTime @default(now())
+  status      String        @default("IDLE") // IDLE, RESEARCHING, SCRIPTING, VPROMPTING, DONE, ERROR
+  estimatedCost Float       @default(0.0) // Kaam shuru hone se pehle cost
+  
+  // Private Data (Kabhi dusre user se share nahi hoga)
+  chatHistory Json?         // 5 messages ki limit track karne ke liye
+  roadmap     String?       @db.Text
+  script      String?       @db.Text
+  title       String?
+  description String?
+  tags        String?
+  vPrompts    Json?         // Visual Prompts array
+  
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 }
