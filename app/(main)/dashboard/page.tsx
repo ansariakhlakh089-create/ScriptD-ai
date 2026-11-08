@@ -1,81 +1,117 @@
-"use client";
-import { useRouter } from 'next/navigation';
+import Link from "next/link";
+import { db } from "@/lib/db";
+// Note: Real app mein aap 'next-auth' ya Clerk se logged-in user ki ID nikalenge.
+// Yahan demonstration ke liye hum ek hardcoded userId le rahe hain.
 
-export default function DashboardPage() {
-  const router = useRouter();
+export default async function DashboardPage() {
+  const userId = "user_id_here"; // Auth se aayega
+
+  // 1. User ki details aur limits fetch karna
+  const user = await db.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) {
+    return <div className="p-10 text-center">User not found. Please login.</div>;
+  }
+
+  // 2. User ki purani scripts/projects fetch karna (Latest first)
+  const projects = await db.project.findMany({
+    where: { userId: userId },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      title: true,
+      topic: true,
+      status: true,
+      createdAt: true,
+      estimatedCost: true
+    }
+  });
 
   return (
-    <div className="flex flex-col h-screen bg-[#352c2e] text-white font-sans">
-      
-      {/* Top Bar */}
-      <div className="flex justify-between items-center p-5 border-b border-white/5 bg-[#352c2e]/90 backdrop-blur-md sticky top-0 z-10">
-        <h1 className="text-2xl font-bold tracking-wide">ScriptD AI</h1>
-        <div className="w-10 h-10 rounded-full bg-[#FF6A3D] flex items-center justify-center font-bold text-lg cursor-pointer shadow-lg">
-          C
-        </div>
-      </div>
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col p-5">
+    <div className="min-h-screen bg-gray-50 p-6 md:p-12">
+      <div className="max-w-5xl mx-auto space-y-8">
         
-        {/* Navigation Tabs (Compact & Clean) */}
-        <div className="flex gap-3 mb-8 overflow-x-auto pb-2 scrollbar-hide">
-          {/* Active Tab */}
-          <button className="flex-1 min-w-[100px] flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-[#FF6A3D]/10 border border-[#FF6A3D] text-[#FF6A3D] shadow-[0_0_15px_rgba(255,106,61,0.2)]">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-2.11m-5.29 8.624a2.25 2.25 0 001.798-1.674m-1.798 1.674c-.048.015-.096.03-.145.044a8.114 8.114 0 01-2.32.494l-3 3v-3.091c-1.134.093-2.111.535-2.86 1.196l-1.317-.626A2.25 2.25 0 002.25 12c0-1.104.896-2 2-2h16a2 2 0 012 2c0 1.104-.896 2-2 2z" />
-            </svg>
-            <span className="text-xs font-semibold">Your Chats</span>
-          </button>
-
-          {/* Inactive Tabs */}
-          <button className="flex-1 min-w-[100px] flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-[#423739] border border-white/5 text-gray-400 hover:text-white transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
-            </svg>
-            <span className="text-xs font-semibold">Creation</span>
-          </button>
-
-          <button className="flex-1 min-w-[100px] flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-[#423739] border border-white/5 text-gray-400 hover:text-white transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
-            </svg>
-            <span className="text-xs font-semibold">Projects</span>
-          </button>
+        {/* HEADER & STATS SECTION */}
+        <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back! 👋</h1>
+            <p className="text-gray-500">Apni nayi video script banayein ya purani history dekhein.</p>
+          </div>
+          
+          <div className="flex gap-4 items-center bg-gray-50 p-4 rounded-xl border border-gray-100 w-full md:w-auto">
+            <div className="text-center px-4 border-r border-gray-200">
+              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Plan</p>
+              <p className={`font-bold text-lg ${user.plan === 'PAID' ? 'text-purple-600' : 'text-gray-700'}`}>
+                {user.plan}
+              </p>
+            </div>
+            <div className="text-center px-4 border-r border-gray-200">
+              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Credits</p>
+              <p className="font-bold text-lg text-gray-700">{user.credits.toFixed(1)}</p>
+            </div>
+            <div className="text-center px-4">
+              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Chats Today</p>
+              <p className="font-bold text-lg text-gray-700">{user.chatsToday} <span className="text-sm text-gray-400">/ 3</span></p>
+            </div>
+          </div>
         </div>
 
-        {/* Empty State Message */}
-        <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
-          <div className="w-20 h-20 mb-4 rounded-full bg-[#423739] flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-10 h-10 text-gray-400">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
-            </svg>
-          </div>
-          <h2 className="text-lg font-medium text-white mb-2">Abhi koi chat nahi hai.</h2>
-          <p className="text-sm text-[#b3a3a5]">Neeche "Go Create" dabakar naya script shuru karein.</p>
-        </div>
-      </div>
-
-      {/* Bottom Input Area */}
-      <div className="p-4 bg-[#352c2e] border-t border-white/5">
-        <div className="flex items-center gap-3">
-          <div className="flex-1 bg-[#423739] rounded-full flex items-center px-4 py-3 border border-white/5">
-            <input 
-              type="text" 
-              placeholder="Naya script shuru karein..." 
-              className="w-full bg-transparent text-sm text-white outline-none placeholder-gray-500"
-            />
-          </div>
-          <button 
-            onClick={() => router.push('/chat')} // Ye aapko chat screen par le jayega
-            className="w-16 h-16 rounded-full bg-[#FF6A3D] hover:bg-[#ff5a2a] flex flex-col items-center justify-center text-xs font-bold leading-tight shadow-[0_0_20px_rgba(255,106,61,0.4)] transition-all active:scale-95"
+        {/* ACTION SECTION (Go Create Button) */}
+        <div className="flex justify-between items-end">
+          <h2 className="text-xl font-bold text-gray-800">Your Projects</h2>
+          <Link 
+            href="/chat" 
+            className="bg-black text-white px-6 py-3 rounded-full font-medium hover:bg-gray-800 transition-all shadow-md flex items-center gap-2"
           >
-            <span>Go</span>
-            <span>Create</span>
-          </button>
+            <span>+ Go Create</span>
+          </Link>
         </div>
-      </div>
 
+        {/* PROJECTS GRID / HISTORY */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {projects.length === 0 ? (
+            <div className="col-span-full bg-white p-10 rounded-2xl border border-dashed border-gray-300 text-center text-gray-500">
+              Koi purana project nahi hai. Nayi script banwane ke liye 'Go Create' par click karein.
+            </div>
+          ) : (
+            projects.map((project) => (
+              <div key={project.id} className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-shadow relative flex flex-col justify-between h-48">
+                
+                {/* Status Badge */}
+                <div className="absolute top-4 right-4">
+                  {project.status === "DONE" && <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-md font-medium">Done</span>}
+                  {project.status === "ERROR" && <span className="bg-red-100 text-red-700 text-xs px-2 py-1 rounded-md font-medium">Failed</span>}
+                  {!["DONE", "ERROR"].includes(project.status) && <span className="bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded-md font-medium animate-pulse">In Progress</span>}
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">
+                    {new Date(project.createdAt).toLocaleDateString()}
+                  </p>
+                  <h3 className="font-bold text-gray-900 text-lg line-clamp-2 mb-1">
+                    {project.title || project.topic}
+                  </h3>
+                  <p className="text-sm text-gray-500 line-clamp-1">Topic: {project.topic}</p>
+                </div>
+
+                <div className="flex items-center justify-between mt-4">
+                  <span className="text-xs text-gray-400">Cost: {project.estimatedCost} credits</span>
+                  {/* Jab user history click kare, hum usko wapas /chat page pe bhej sakte hain purane ID ke sath */}
+                  <Link 
+                    href={`/chat?id=${project.id}`} 
+                    className="text-sm text-blue-600 font-medium hover:underline"
+                  >
+                    View Result →
+                  </Link>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+      </div>
     </div>
   );
 }
