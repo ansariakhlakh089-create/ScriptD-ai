@@ -41,3 +41,18 @@ app.*.map.json
 .env
 .env.local
 .env.production
+
+# Node.js dependencies (Sabse zaroori)
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Next.js build output
+.next/
+out/
+
+# Vercel
+.vercel
+
