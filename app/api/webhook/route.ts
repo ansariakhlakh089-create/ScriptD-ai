@@ -1,49 +1,48 @@
-// app/api/webhook/route.ts
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { headers } from 'next/headers';
-// import Stripe from 'stripe';
+// FILE: app/api/webhook/route.ts
+// Razorpay yahan batata hai ki payment ho gaya (browser band ho jaye tab bhi kaam karta hai)
+// Razorpay Dashboard > Webhooks mein URL daalo:  https://TUMHARA-DOMAIN/api/webhook
+// Events: payment.captured (aur order.paid), secret = RAZORPAY_WEBHOOK_SECRET
+import { fulfillOrder, verifyWebhookSignature } from "@/lib/razorpay";
 
-// Stripe CLI webhook secret
-// const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+export const runtime = "nodejs";
+
+interface WebhookPayload {
+  event?: string;
+  payload?: {
+    payment?: { entity?: { id?: string; order_id?: string; amount?: number } };
+  };
+}
 
 export async function POST(req: Request) {
-  const body = await req.text();
-  const signature = headers().get('stripe-signature') as string;
+  const raw = await req.text(); // signature RAW body par bani hoti hai
+  const signature = req.headers.get("x-razorpay-signature");
 
-  let event;
+  if (!verifyWebhookSignature(raw, signature)) {
+    return new Response("invalid signature", { status: 400 });
+  }
+
+  let event: WebhookPayload;
+  try {
+    event = JSON.parse(raw) as WebhookPayload;
+  } catch {
+    return new Response("bad json", { status: 400 });
+  }
 
   try {
-    // 1. Signature Verify karna taaki koi fake request na bhej sake
-    // event = stripe.webhooks.constructEvent(body, signature, endpointSecret!);
-    
-    // Demo ke liye hum JSON parse kar rahe hain
-    event = JSON.parse(body);
-  } catch (err: any) {
-    console.error(`Webhook Error: ${err.message}`);
-    return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
-  }
+    const entity = event.payload?.payment?.entity;
+    const isPaidEvent = event.event === "payment.captured" || event.event === "order.paid";
 
-  // 2. Successful Payment Event Handle karna
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object;
-    
-    // Checkout banate waqt humne client_reference_id mein userId bheja tha
-    const userId = session.client_reference_id; 
-
-    if (userId) {
-      // 3. User ko Upgrade karna aur Credits dena
-      await db.user.update({
-        where: { id: userId },
-        data: {
-          plan: "PAID",
-          credits: { increment: 100 } // 100 Credits add kar diye
-        }
+    if (isPaidEvent && entity?.id && entity.order_id) {
+      const result = await fulfillOrder({
+        orderId: entity.order_id,
+        paymentId: entity.id,
+        paidAmountPaise: typeof entity.amount === "number" ? entity.amount : undefined,
       });
-      console.log(`User ${userId} upgraded to PAID plan with 100 credits.`);
+      if (!result.ok) console.error("[webhook] fulfill failed:", result.reason, entity.order_id);
     }
+    return Response.json({ ok: true });
+  } catch (e) {
+    console.error("[webhook] error", e);
+    return new Response("server error", { status: 500 }); // 500 dene par Razorpay dobara bhejta hai
   }
-
-  // Gateway ko 200 OK bhejna zaroori hai, warna wo baar-baar ping karega
-  return new NextResponse('Webhook processed successfully', { status: 200 });
 }
