@@ -1,41 +1,27 @@
-// middleware.ts
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+// FILE: middleware.ts  (project ke root mein, app/ folder ke bahar)
+import { NextRequest, NextResponse } from "next/server";
+import { getSessionCookie } from "better-auth/cookies";
 
+// Ye sirf "cookie hai ya nahi" check karta hai (tez, par pakka nahi).
+// Asli suraksha har page/API ke andar getCurrentUser() se hoti hai.
 export function middleware(request: NextRequest) {
-  // Sirf API routes par rate limiting aur IP tracking lagayenge
-  if (request.nextUrl.pathname.startsWith('/api/generate') || request.nextUrl.pathname.startsWith('/api/chat')) {
-    
-    // Cloudflare, Vercel ya standard headers se IP nikalna
-    const ip = request.headers.get('x-forwarded-for') ?? 
-               request.headers.get('x-real-ip') ?? 
-               '127.0.0.1';
+  const hasSession = Boolean(getSessionCookie(request));
+  const { pathname } = request.nextUrl;
+  const isAuthPage = pathname === "/login" || pathname === "/signup";
 
-    // Headers me IP set kar rahe hain taaki API route usko access kar sake
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set('x-user-ip', ip);
+  if (!hasSession && !isAuthPage) {
+    const url = new URL("/login", request.url);
+    url.searchParams.set("next", pathname);
+    return NextResponse.redirect(url);
+  }
 
-    // Basic Auth Check: Agar authorization header (Token) nahi hai toh reject
-    // Note: Agar NextAuth use kar rahe hain toh logic thoda alag hoga, par concept yahi rahega
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized Request. Login required." },
-        { status: 401 }
-      );
-    }
-
-    return NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    });
+  if (hasSession && isAuthPage) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   return NextResponse.next();
 }
 
-// Middleware kahan chalega uski setting
 export const config = {
-  matcher: '/api/:path*',
+  matcher: ["/dashboard/:path*", "/chat/:path*", "/login", "/signup"],
 };
