@@ -1,154 +1,102 @@
-// app/api/generate/route.ts
-export const maxDuration = 60; // 60 seconds (Hobby plan limit) ya 300 (Pro plan limit)
-export const dynamic = 'force-dynamic'; // Caching disable karne ke liye
+// FILE: app/api/generate/route.ts
+// Naya project shuru: idea + type + tone + length. Research -> Script -> Visual prompts background mein chalta hai.
+import { after } from "next/server";
+import { z } from "zod";
+import { db } from "@/lib/db";
+import { getCurrentUser, jsonError, unauthorized } from "@/lib/session";
+import {
+  PAID_MAX_WORDS,
+  LimitError,
+  countWords,
+  handleRouteError,
+  previewFunding,
+  refreshWindow,
+  reserveRun,
+  type Funding,
+} from "@/lib/limits";
+import { FREE_LIMITS } from "@/lib/constants";
+import { missingAIVars } from "@/lib/models";
+import { runPipeline } from "@/lib/pipeline";
 
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { checkAndUpdateLimits } from '@/lib/user-limits';
-import { performResearch, generateScript, generateVPrompts } from '@/lib/ai-models';
-import { getCachedResearch, saveResearchToCache } from '@/lib/cache-logic';
-import { estimateTaskCost } from '@/lib/model-registry';
+export const runtime = "nodejs";
+export const maxDuration = 300; // Vercel par Fluid Compute on rakho, warna lamba kaam beech mein kat sakta hai
+
+const bodySchema = z.object({
+  idea: z.string().trim().min(3).max(4000),
+  genre: z.string().trim().max(40).optional(),
+  tone: z.string().trim().max(40).optional(),
+  length: z.enum(["SHORT", "LONG"]).default("SHORT"),
+});
 
 export async function POST(req: Request) {
   try {
-    const ip = req.headers.get('x-user-ip') || '127.0.0.1';
-    const body = await req.json();
-    const { userId, topic, type, tone, isNewChat } = body;
-
-    // 1. User Verification & Limits Check (Part 3)
-    const user = await db.user.findUnique({ where: { id: userId } });
-    if (!user) return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });
-    
-    await checkAndUpdateLimits(userId, ip, isNewChat);
-    const plan = user.plan as "FREE" | "PAID";
-
-    // 2. Project DB Entry & Cost Estimation
-    const estimatedCost = plan === "PAID" ? estimateTaskCost("SCRIPT", plan, 1000) : 0;
-    
-    // Paid users ke liye credit validation
-    if (plan === "PAID" && user.credits < estimatedCost) {
-      return NextResponse.json({ success: false, message: `Insufficient credits. Need approx ${estimatedCost} credits.` }, { status: 403 });
+    const current = await getCurrentUser();
+    if (!current) return unauthorized();
+    if (!current.emailVerified) {
+      return jsonError(403, "EMAIL_NOT_VERIFIED", "Please verify your email first. Log in once with the email code.");
     }
 
+    const parsed = bodySchema.safeParse(await req.json().catch(() => null));
+    if (!parsed.success) return jsonError(400, "BAD_REQUEST", "Please type your idea (at least 3 characters).");
+    const { idea, genre, tone, length } = parsed.data;
+
+    const user = await refreshWindow(current);
+
+    // 1) Pehle check: AI set-up poora hai? (taaki credit kate hi nahi)
+    const previewTier: Funding = previewFunding(user, length);
+    const missing = missingAIVars(previewTier);
+    if (missing.length > 0) {
+      console.error("[generate] missing env:", missing.join(", "));
+      return jsonError(
+        503,
+        "AI_NOT_CONFIGURED",
+        "AI is not set up yet. Please try again later.",
+        process.env.NODE_ENV === "production" ? {} : { missing }
+      );
+    }
+
+    // 2) Word limit
+    const words = countWords(idea);
+    const maxWords = previewTier === "FREE" ? FREE_LIMITS.maxWordsPerQuestion : PAID_MAX_WORDS;
+    if (words > maxWords) {
+      throw new LimitError("TOO_LONG", 400, `Please keep your idea under ${maxWords} words.`, { maxWords });
+    }
+
+    // 3) Project banao, phir credit roko (credit na mila to project hata do)
     const project = await db.project.create({
       data: {
-        userId,
-        topic,
-        scriptType: type,
-        tone,
-        status: 'RESEARCHING', // Pehla step
-        estimatedCost
-      }
+        userId: user.id,
+        topic: idea,
+        title: idea.slice(0, 80),
+        genre: genre || null,
+        tone: tone || null,
+        length,
+        status: "IDLE",
+      },
     });
 
-    // 3. Paid plan walo ka temporary token deduction (Agar API fail hui toh wapas milenge)
-    if (plan === "PAID") {
-      await db.user.update({
-        where: { id: userId },
-        data: { credits: { decrement: estimatedCost } }
+    let funding: Funding;
+    try {
+      funding = await reserveRun(user, length);
+      await db.tokenLedger.create({
+        data: { userId: user.id, projectId: project.id, delta: 0, reason: "RESERVE", meta: { source: funding, length } },
       });
+      await db.message.create({ data: { projectId: project.id, role: "USER", content: idea } });
+    } catch (e) {
+      await db.project.delete({ where: { id: project.id } }).catch(() => undefined);
+      throw e;
     }
 
-    // 4. Background Execution Trigger (Fire and Forget)
-    // Dhyan dein: Production me lambe tasks ke liye Inngest, QStash, ya Next.js 15 ka `after()` function use karein taaki server timeout na ho.
-    runMasterPipeline(project.id, userId, topic, type, tone, plan, estimatedCost, isNewChat);
+    // 4) Kaam background mein, user ko turant jawab
+    await db.project.update({
+      where: { id: project.id },
+      data: { status: "RESEARCHING", progressNote: "Starting..." },
+    });
+    after(() => runPipeline({ projectId: project.id, userId: user.id, funding }));
 
-    // Frontend ko turant Project ID bhej do taaki UI polling (status check) shuru kar sake
-    return NextResponse.json({ success: true, projectId: project.id });
-
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 400 });
+    return Response.json({ projectId: project.id }, { status: 202 });
+  } catch (e) {
+    return handleRouteError(e);
   }
 }
 
-/**
- * Ye function background me chalega aur status update karega
- */
-async function runMasterPipeline(
-  projectId: string, userId: string, topic: string, type: string, tone: string, 
-  plan: "FREE" | "PAID", estimatedCost: number, isNewChat: boolean
-) {
-  try {
-    // STEP 1: RESEARCH (Perplexity) & CACHE CHECK
-    let researchFacts = "";
-    let researchLinks = null;
-    
-    const cachedData = await getCachedResearch(topic);
-    if (cachedData) {
-      researchFacts = cachedData.facts;
-      researchLinks = cachedData.links;
-      console.log(`Cache hit for topic: ${topic}`);
-    } else {
-      console.log(`Fetching new research for: ${topic}`);
-      const rawResearch = await performResearch(topic, plan);
-      // Demo parsing logic (Actual response ke hisaab se extract karein)
-      researchFacts = rawResearch; 
-      researchLinks = { sources: ["extracted_link_1", "extracted_link_2"] }; // JSON dummy
-      
-      // Save anonymized data to global cache
-      await saveResearchToCache(topic, researchFacts, researchLinks);
-    }
-
-    // Update DB: Roadmap Done (Chat tab me dikhane ke liye)
-    await db.project.update({
-      where: { id: projectId },
-      data: { status: 'SCRIPTING', roadmap: researchFacts }
-    });
-
-    // STEP 2: SCRIPT GENERATION (Groq / Claude)
-    const generatedScript = await generateScript(topic, type, tone, researchFacts, plan);
-    
-    // Parse Title, Description, Tags from AI response (assuming AI is instructed to use identifiers like TITLE:, SCRIPT:, DESC:)
-    // Ek basic extraction logic:
-    const titleMatch = generatedScript.match(/TITLE:\s*(.*)/);
-    const finalTitle = titleMatch ? titleMatch[1] : `${topic} Script`;
-
-    await db.project.update({
-      where: { id: projectId },
-      data: { 
-        status: 'VPROMPTING', 
-        script: generatedScript,
-        title: finalTitle 
-      }
-    });
-
-    // STEP 3: VISUAL PROMPTS (Grok / Gemini)
-    const vPromptsJson = await generateVPrompts(generatedScript, plan);
-
-    // STEP 4: FINAL QUALITY CHECK & DONE
-    await db.project.update({
-      where: { id: projectId },
-      data: { 
-        status: 'DONE', 
-        vPrompts: vPromptsJson 
-      }
-    });
-
-  } catch (error: any) {
-    console.error(`Pipeline Failed for Project ${projectId}:`, error);
-    
-    // ROLLBACK LOGIC: Tokens wapas karna aur Limits adjust karna
-    await db.project.update({
-      where: { id: projectId },
-      data: { status: 'ERROR' }
-    });
-
-    if (plan === "PAID") {
-      // Credits refund
-      await db.user.update({
-        where: { id: userId },
-        data: { credits: { increment: estimatedCost } }
-      });
-    } else {
-      // Free plan limit wapas karna (kyunki fail ho gaya toh quota nahi katna chahiye)
-      await db.user.update({
-        where: { id: userId },
-        data: { 
-          chatsToday: isNewChat ? { decrement: 1 } : undefined,
-          messagesToday: !isNewChat ? { decrement: 1 } : undefined
-        }
-      });
-    }
-  }
-}
-  
