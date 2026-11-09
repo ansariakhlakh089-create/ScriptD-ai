@@ -1,36 +1,17 @@
-// app/api/user/route.ts
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+// FILE: app/api/user/route.ts
+// Top bar ke liye: plan, tokens, free quota kitna bacha
+import { getCurrentUser, unauthorized } from "@/lib/session";
+import { buildUserSummary, handleRouteError, refreshWindow } from "@/lib/limits";
 
-export async function GET(req: Request) {
+export const runtime = "nodejs";
+
+export async function GET() {
   try {
-    // Real app mein userId session ya JWT token se aayegi.
-    // Example: const session = await getSession(); const userId = session.user.id;
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId') || "user_id_here"; 
-
-    if (!userId) {
-      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        plan: true,
-        credits: true,
-        chatsToday: true,
-        messagesToday: true,
-      }
-    });
-
-    if (!user) {
-      return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });
-    }
-
-    return NextResponse.json({ success: true, user });
-  } catch (error) {
-    return NextResponse.json({ success: false, message: "Server error" }, { status: 500 });
+    const current = await getCurrentUser();
+    if (!current) return unauthorized();
+    const user = await refreshWindow(current);
+    return Response.json({ user: buildUserSummary(user) });
+  } catch (e) {
+    return handleRouteError(e);
   }
 }
