@@ -1,4 +1,4 @@
-// FILE: app/layout.tsx
+// FILE: app/layout.tsx  (purani file ko poora replace karo)
 import type { Metadata, Viewport } from "next";
 import { Inter, Noto_Sans_Devanagari } from "next/font/google";
 import "./globals.css";
@@ -22,14 +22,13 @@ export const metadata: Metadata = {
     default: "ScriptD AI - Your Content Creation Journey",
     template: "%s · ScriptD AI",
   },
-  description:
-    "Research, script and visual prompts for Indian content creators - sources included.",
+  description: "Research, script and visual prompts for Indian content creators - sources included.",
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#faf7fc",
+  themeColor: "#766964",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
