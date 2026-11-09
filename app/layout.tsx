@@ -1,27 +1,41 @@
-// app/layout.tsx
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+// FILE: app/layout.tsx
+import type { Metadata, Viewport } from "next";
+import { Inter, Noto_Sans_Devanagari } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+// Hindi script ke liye (taaki Hindi text sundar dikhe)
+const hindi = Noto_Sans_Devanagari({
+  subsets: ["devanagari", "latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-hindi",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
-  title: "Vistai - AI Script & Visual Prompt Generator",
-  description: "Generate amazing scripts and visual prompts instantly.",
+  title: {
+    default: "ScriptD AI - Your Content Creation Journey",
+    template: "%s · ScriptD AI",
+  },
+  description:
+    "Research, script and visual prompts for Indian content creators - sources included.",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#faf7fc",
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <main className="min-h-screen bg-gray-50">
-          {children}
-        </main>
-      </body>
+    <html lang="en" className={`${inter.variable} ${hindi.variable}`}>
+      <body className="min-h-dvh font-sans">{children}</body>
     </html>
   );
 }
