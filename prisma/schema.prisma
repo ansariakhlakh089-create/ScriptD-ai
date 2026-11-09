@@ -1,62 +1,193 @@
+// FILE: prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql" // Database connection
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // pooler (6543)
+  directUrl = env("DIRECT_URL")   // direct (5432) - db push ke liye
 }
 
-// User Table: Limits, Verification, aur Credits track karne ke liye
+// =====================================================================
+// 1) LOGIN TABLES (Better Auth ye 4 tables khud use karta hai - naam/fields mat badalna)
+// =====================================================================
+
 model User {
-  id                String    @id @default(cuid())
-  email             String    @unique
-  emailVerified     Boolean   @default(false) // Fake accounts rokne ke liye
-  lastIpAddress     String?   // Device/IP rate limiting ke liye
-  
-  plan              String    @default("FREE") // FREE or PAID
-  credits           Float     @default(0.0)    // Token cost decimal mein
-  
-  // 24-Hour Limits Tracking
-  chatsToday        Int       @default(0)
-  messagesToday     Int       @default(0)
-  lastResetDate     DateTime  @default(now())
+  id            String   @id
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  projects          Project[]
-  createdAt         DateTime  @default(now())
+  // ---- ScriptD wallet & limits (ye hamare apne fields hain) ----
+  plan             String    @default("FREE") // FREE | WEEKLY_99 | MONTHLY_699 | MONTHLY_999
+  planExpiresAt    DateTime?
+  tokenBalance     Int       @default(0)
+  longScriptsLeft  Int       @default(0)
+  shortScriptsLeft Int       @default(0)
+
+  // ---- Free user ka 24 ghante ka window ----
+  freeWindowStart DateTime  @default(now())
+  freeChatsUsed   Int       @default(0)
+  freeTokensUsed  Int       @default(0)
+  freeScriptsUsed Int       @default(0)
+  adUnlocksUsed   Int       @default(0)
+  lockedUntil     DateTime?
+  lastIpAddress   String?
+
+  sessions Session[]
+  accounts Account[]
+  projects Project[]
+  ledger   TokenLedger[]
+  payments Payment[]
+
+  @@map("user")
 }
 
-// Global Research Cache: API cost bachane ke liye (Anonymized)
-model ResearchCache {
-  id              String   @id @default(cuid())
-  topic           String   @unique // Same topic aane par yahan se data uthayenge
-  perplexityData  String   @db.Text
-  sourceLinks     Json     // Sirf Perplexity ke links yahan rahenge
-  createdAt       DateTime @default(now())
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
 }
 
-// Main Chat & Project Table (Strictly Private)
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// =====================================================================
+// 2) APP TABLES
+// =====================================================================
+
 model Project {
-  id          String        @id @default(cuid())
-  userId      String
-  user        User          @relation(fields: [userId], references: [id])
-  
-  topic       String
-  scriptType  String        @default("SHORT") // Free walo ke liye default
-  tone        String
-  
-  status      String        @default("IDLE") // IDLE, RESEARCHING, SCRIPTING, VPROMPTING, DONE, ERROR
-  estimatedCost Float       @default(0.0) // Kaam shuru hone se pehle cost
-  
-  // Private Data (Kabhi dusre user se share nahi hoga)
-  chatHistory Json?         // 5 messages ki limit track karne ke liye
-  roadmap     String?       @db.Text
-  script      String?       @db.Text
-  title       String?
-  description String?
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title  String?
+  topic  String?
+  genre  String?
+  tone   String?
+  length String  @default("SHORT")
+
+  status       String  @default("IDLE")
+  progressNote String?
+
+  roadmap     String? @db.Text
+  sources     Json?
+  script      String? @db.Text
+  description String? @db.Text
   tags        String?
-  vPrompts    Json?         // Visual Prompts array
-  
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  vPrompts    Json?
+
+  tokensCharged Int     @default(0)
+  apiCostUsd    Float   @default(0)
+  errorMessage  String?
+  isSaved       Boolean @default(false)
+
+  messages  Message[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([userId, status])
+  @@map("project")
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  role      String
+  content   String   @db.Text
+  tokens    Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([projectId, createdAt])
+  @@map("message")
+}
+
+model ResearchCache {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  topic     String
+  data      String   @db.Text
+  sources   Json
+  hits      Int      @default(0)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([expiresAt])
+  @@map("research_cache")
+}
+
+model TokenLedger {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  delta     Int
+  reason    String
+  projectId String?
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("token_ledger")
+}
+
+model Payment {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider    String    @default("RAZORPAY")
+  orderId     String    @unique
+  paymentId   String?   @unique
+  productKey  String
+  amountPaise Int
+  currency    String    @default("INR")
+  status      String    @default("CREATED")
+  createdAt   DateTime  @default(now())
+  paidAt      DateTime?
+
+  @@index([userId, createdAt])
+  @@map("payment")
 }
