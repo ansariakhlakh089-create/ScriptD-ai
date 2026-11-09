@@ -39,6 +39,7 @@ export interface ProjectDTO {
   vPrompts: VPromptItem[];
   errorMessage: string | null;
   isSaved: boolean;
+  folderId: string | null;
   tokensCharged: number;
   createdAt: string;
   updatedAt: string;
@@ -52,8 +53,17 @@ export interface ProjectListItem {
   length: ScriptLength;
   status: ProjectStatus;
   isSaved: boolean;
+  folderId: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+// UI mein "Project" (naam wala folder)
+export interface FolderDTO {
+  id: string;
+  name: string;
+  count: number;
+  createdAt: string;
 }
 
 export interface MessageDTO {
