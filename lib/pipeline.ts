@@ -394,6 +394,7 @@ export function toProjectDTO(p: Project): ProjectDTO {
     vPrompts: asArray<VPromptItem>(p.vPrompts),
     errorMessage: p.errorMessage,
     isSaved: p.isSaved,
+    folderId: p.folderId,
     tokensCharged: p.tokensCharged,
     createdAt: p.createdAt.toISOString(),
     updatedAt: p.updatedAt.toISOString(),
