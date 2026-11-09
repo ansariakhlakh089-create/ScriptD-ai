@@ -1,5 +1,5 @@
 // FILE: app/api/projects/route.ts
-// Dashboard ki list:  GET /api/projects?tab=all|done|saved&cursor=...
+// Dashboard ki list:  GET /api/projects?tab=all|done|saved&folderId=...&cursor=...
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getCurrentUser, unauthorized } from "@/lib/session";
@@ -19,10 +19,12 @@ export async function GET(req: Request) {
     const params = new URL(req.url).searchParams;
     const tab = params.get("tab") ?? "all";
     const cursor = params.get("cursor");
+    const folderId = params.get("folderId");
 
     const where: Prisma.ProjectWhereInput = { userId: user.id };
     if (tab === "done") where.status = "DONE";
     if (tab === "saved") where.isSaved = true;
+    if (folderId) where.folderId = folderId;
 
     const rows = await db.project.findMany({
       where,
@@ -37,6 +39,7 @@ export async function GET(req: Request) {
         length: true,
         status: true,
         isSaved: true,
+        folderId: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -53,6 +56,7 @@ export async function GET(req: Request) {
       length: p.length === "LONG" ? "LONG" : "SHORT",
       status: p.status as ProjectStatus,
       isSaved: p.isSaved,
+      folderId: p.folderId,
       createdAt: p.createdAt.toISOString(),
       updatedAt: p.updatedAt.toISOString(),
     }));
