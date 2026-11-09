@@ -26,6 +26,7 @@ const bodySchema = z.object({
   genre: z.string().trim().max(40).optional(),
   tone: z.string().trim().max(40).optional(),
   length: z.enum(["SHORT", "LONG"]).default("SHORT"),
+  folderId: z.string().min(1).max(64).optional(), // kisi "Your Projects" folder ke andar banana ho to
 });
 
 export async function POST(req: Request) {
@@ -38,9 +39,14 @@ export async function POST(req: Request) {
 
     const parsed = bodySchema.safeParse(await req.json().catch(() => null));
     if (!parsed.success) return jsonError(400, "BAD_REQUEST", "Please type your idea (at least 3 characters).");
-    const { idea, genre, tone, length } = parsed.data;
+    const { idea, genre, tone, length, folderId } = parsed.data;
 
     const user = await refreshWindow(current);
+
+    if (folderId) {
+      const folder = await db.folder.findFirst({ where: { id: folderId, userId: user.id }, select: { id: true } });
+      if (!folder) return jsonError(404, "NOT_FOUND", "That project was not found.");
+    }
 
     // 1) Pehle check: AI set-up poora hai? (taaki credit kate hi nahi)
     const previewTier: Funding = previewFunding(user, length);
@@ -71,6 +77,7 @@ export async function POST(req: Request) {
         genre: genre || null,
         tone: tone || null,
         length,
+        folderId: folderId ?? null,
         status: "IDLE",
       },
     });
@@ -98,5 +105,4 @@ export async function POST(req: Request) {
   } catch (e) {
     return handleRouteError(e);
   }
-}
-
+        }
