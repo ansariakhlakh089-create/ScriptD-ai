@@ -1,117 +1,300 @@
-import Link from "next/link";
-import { db } from "@/lib/db";
-// Note: Real app mein aap 'next-auth' ya Clerk se logged-in user ki ID nikalenge.
-// Yahan demonstration ke liye hum ek hardcoded userId le rahe hain.
+// FILE: app/(main)/dashboard/page.tsx
+"use client";
 
-export default async function DashboardPage() {
-  const userId = "user_id_here"; // Auth se aayega
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { ChevronLeft, CircleAlert, Folder, LoaderCircle, MessageSquare, Sparkles, type LucideIcon } from "lucide-react";
+import AppHeader from "@/components/layout/AppHeader";
+import ProjectList from "@/components/dashboard/ProjectList";
+import FolderList from "@/components/dashboard/FolderList";
+import PlansModal from "@/components/monetization/PlansModal";
+import { useUser } from "@/hooks/useUser";
+import { api, errorMessage } from "@/lib/api-client";
+import { WORKING_STATUSES } from "@/lib/constants";
+import type { FolderDTO, ProjectListItem } from "@/types";
 
-  // 1. User ki details aur limits fetch karna
-  const user = await db.user.findUnique({
-    where: { id: userId },
-  });
+type Tab = "chats" | "creation" | "projects";
 
-  if (!user) {
-    return <div className="p-10 text-center">User not found. Please login.</div>;
+const TABS: { key: Tab; label: string; icon: LucideIcon }[] = [
+  { key: "chats", label: "Your Chats", icon: MessageSquare },
+  { key: "creation", label: "Your Creation", icon: Sparkles },
+  { key: "projects", label: "Your Projects", icon: Folder },
+];
+
+const EMPTY_TEXT: Record<Tab, { icon: LucideIcon; lines: [string, string] }> = {
+  chats: { icon: MessageSquare, lines: ["Abhi koi chat nahi hai.", 'Neeche "Go Create" dabakar naya script shuru karein.'] },
+  creation: { icon: Sparkles, lines: ["Abhi koi creation tayyar nahi hai.", "Jo script poori ban jayegi wo yahan dikhegi."] },
+  projects: { icon: Folder, lines: ["Is project mein abhi koi script nahi hai.", 'Neeche "Go Create" dabakar yahin naya script banayein.'] },
+};
+
+export default function DashboardPage() {
+  const router = useRouter();
+  const { user, refresh: refreshUser } = useUser();
+
+  const [tab, setTab] = useState<Tab>("chats");
+  const [openFolder, setOpenFolder] = useState<FolderDTO | null>(null);
+  const [items, setItems] = useState<ProjectListItem[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [folders, setFolders] = useState<FolderDTO[]>([]);
+  const [foldersLoaded, setFoldersLoaded] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [idea, setIdea] = useState("");
+  const [plansOpen, setPlansOpen] = useState(false);
+  const requestId = useRef(0);
+
+  const showsList = tab !== "projects" || openFolder !== null;
+
+  const listUrl = useMemo(() => {
+    if (tab === "creation") return "/api/projects?tab=done";
+    if (tab === "projects" && openFolder) return `/api/projects?tab=all&folderId=${encodeURIComponent(openFolder.id)}`;
+    return "/api/projects?tab=all";
+  }, [tab, openFolder]);
+
+  const loadList = useCallback(
+    async (cursor: string | null) => {
+      const id = ++requestId.current;
+      try {
+        const url = cursor ? `${listUrl}&cursor=${encodeURIComponent(cursor)}` : listUrl;
+        const data = await api<{ items: ProjectListItem[]; nextCursor: string | null }>(url);
+        if (id !== requestId.current) return; // purana jawab, ignore
+        setItems((prev) => (cursor ? [...prev, ...data.items] : data.items));
+        setNextCursor(data.nextCursor);
+        setError(null);
+      } catch (e) {
+        if (id === requestId.current) setError(errorMessage(e));
+      } finally {
+        if (id === requestId.current) {
+          setLoading(false);
+          setLoadingMore(false);
+        }
+      }
+    },
+    [listUrl]
+  );
+
+  const loadFolders = useCallback(async () => {
+    try {
+      const data = await api<{ folders: FolderDTO[] }>("/api/folders");
+      setFolders(data.folders);
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setFoldersLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadFolders();
+  }, [loadFolders]);
+
+  useEffect(() => {
+    if (!showsList) return;
+    setLoading(true);
+    setItems([]);
+    setNextCursor(null);
+    void loadList(null);
+  }, [showsList, loadList]);
+
+  // Kaam chal raha ho to list har 5 second mein khud update
+  const hasWorking = items.some((i) => (WORKING_STATUSES as string[]).includes(i.status));
+  useEffect(() => {
+    if (!hasWorking || !showsList) return;
+    const timer = setInterval(() => void loadList(null), 5000);
+    return () => clearInterval(timer);
+  }, [hasWorking, showsList, loadList]);
+
+  async function handleMove(projectId: string, folderId: string | null) {
+    try {
+      await api(`/api/project/${projectId}`, { method: "PATCH", json: { folderId } });
+      await Promise.all([loadList(null), loadFolders()]);
+    } catch (e) {
+      setError(errorMessage(e));
+    }
   }
 
-  // 2. User ki purani scripts/projects fetch karna (Latest first)
-  const projects = await db.project.findMany({
-    where: { userId: userId },
-    orderBy: { createdAt: 'desc' },
-    select: {
-      id: true,
-      title: true,
-      topic: true,
-      status: true,
-      createdAt: true,
-      estimatedCost: true
+  async function handleDelete(projectId: string) {
+    if (!window.confirm("Delete this script? This cannot be undone.")) return;
+    try {
+      await api(`/api/project/${projectId}`, { method: "DELETE" });
+      setItems((prev) => prev.filter((i) => i.id !== projectId));
+      void loadFolders();
+    } catch (e) {
+      setError(errorMessage(e));
     }
-  });
+  }
+
+  async function handleCreateFolder(name: string) {
+    try {
+      await api("/api/folders", { method: "POST", json: { name } });
+      setError(null);
+      await loadFolders();
+    } catch (e) {
+      setError(errorMessage(e));
+      throw e; // form khula rahe, user dobara try kare
+    }
+  }
+
+  async function handleDeleteFolder(folder: FolderDTO) {
+    if (!window.confirm(`Delete project "${folder.name}"? Its scripts will not be deleted.`)) return;
+    try {
+      await api(`/api/folders?id=${encodeURIComponent(folder.id)}`, { method: "DELETE" });
+      await loadFolders();
+    } catch (e) {
+      setError(errorMessage(e));
+    }
+  }
+
+  function goCreate() {
+    const params = new URLSearchParams();
+    const text = idea.trim().slice(0, 500);
+    if (text) params.set("idea", text);
+    if (openFolder) params.set("folder", openFolder.id);
+    const query = params.toString();
+    router.push(query ? `/chat?${query}` : "/chat");
+  }
+
+  const empty = EMPTY_TEXT[tab];
+  const EmptyIcon = empty.icon;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 md:p-12">
-      <div className="max-w-5xl mx-auto space-y-8">
-        
-        {/* HEADER & STATS SECTION */}
-        <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back! 👋</h1>
-            <p className="text-gray-500">Apni nayi video script banayein ya purani history dekhein.</p>
+    <div className="mx-auto flex min-h-dvh w-full max-w-xl flex-col">
+      <AppHeader user={user} onUpgrade={() => setPlansOpen(true)} />
+
+      <main className="flex-1 px-5 pb-44 pt-5">
+        {/* Teen tabs */}
+        <div className="grid grid-cols-3 gap-3" role="tablist" aria-label="Dashboard sections">
+          {TABS.map(({ key, label, icon: Icon }) => {
+            const active = tab === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => {
+                  setTab(key);
+                  setOpenFolder(null);
+                  setError(null);
+                }}
+                className={`flex flex-col items-center gap-2 rounded-2xl border px-2 py-4 text-sm font-semibold transition ${
+                  active
+                    ? "border-ember bg-ember/20 text-ember-soft"
+                    : "border-white/30 bg-white/10 text-cream hover:bg-white/15"
+                }`}
+              >
+                <Icon className={`h-6 w-6 ${active ? "text-ember" : "text-cream"}`} aria-hidden />
+                {label}
+              </button>
+            );
+          })}
+        </div>
+
+        {error && (
+          <div role="alert" className="mt-5 flex items-start gap-3 rounded-2xl bg-red-950/40 px-4 py-3 text-sm text-red-100">
+            <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            <span className="flex-1">{error}</span>
+            <button type="button" onClick={() => setError(null)} className="font-semibold underline-offset-2 hover:underline">
+              Dismiss
+            </button>
           </div>
-          
-          <div className="flex gap-4 items-center bg-gray-50 p-4 rounded-xl border border-gray-100 w-full md:w-auto">
-            <div className="text-center px-4 border-r border-gray-200">
-              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Plan</p>
-              <p className={`font-bold text-lg ${user.plan === 'PAID' ? 'text-purple-600' : 'text-gray-700'}`}>
-                {user.plan}
+        )}
+
+        <section className="mt-6">
+          {tab === "projects" && openFolder && (
+            <div className="mb-4 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setOpenFolder(null)}
+                aria-label="Back to projects"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
+              >
+                <ChevronLeft className="h-5 w-5" aria-hidden />
+              </button>
+              <h2 className="truncate text-lg font-semibold text-cream">{openFolder.name}</h2>
+            </div>
+          )}
+
+          {tab === "projects" && !openFolder ? (
+            <FolderList
+              folders={folders}
+              loaded={foldersLoaded}
+              onOpen={(f) => setOpenFolder(f)}
+              onCreate={handleCreateFolder}
+              onDelete={handleDeleteFolder}
+            />
+          ) : loading ? (
+            <div className="flex justify-center py-16">
+              <LoaderCircle className="h-7 w-7 animate-spin text-cream-dim" aria-label="Loading" />
+            </div>
+          ) : items.length === 0 ? (
+            <div className="px-6 py-16 text-center">
+              <EmptyIcon className="mx-auto h-16 w-16 text-cream-dim/70" strokeWidth={1.5} aria-hidden />
+              <p className="mt-5 text-base leading-relaxed text-cream-dim">
+                {empty.lines[0]}
+                <br />
+                {empty.lines[1]}
               </p>
             </div>
-            <div className="text-center px-4 border-r border-gray-200">
-              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Credits</p>
-              <p className="font-bold text-lg text-gray-700">{user.credits.toFixed(1)}</p>
-            </div>
-            <div className="text-center px-4">
-              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Chats Today</p>
-              <p className="font-bold text-lg text-gray-700">{user.chatsToday} <span className="text-sm text-gray-400">/ 3</span></p>
-            </div>
-          </div>
-        </div>
-
-        {/* ACTION SECTION (Go Create Button) */}
-        <div className="flex justify-between items-end">
-          <h2 className="text-xl font-bold text-gray-800">Your Projects</h2>
-          <Link 
-            href="/chat" 
-            className="bg-black text-white px-6 py-3 rounded-full font-medium hover:bg-gray-800 transition-all shadow-md flex items-center gap-2"
-          >
-            <span>+ Go Create</span>
-          </Link>
-        </div>
-
-        {/* PROJECTS GRID / HISTORY */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {projects.length === 0 ? (
-            <div className="col-span-full bg-white p-10 rounded-2xl border border-dashed border-gray-300 text-center text-gray-500">
-              Koi purana project nahi hai. Nayi script banwane ke liye 'Go Create' par click karein.
-            </div>
           ) : (
-            projects.map((project) => (
-              <div key={project.id} className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-shadow relative flex flex-col justify-between h-48">
-                
-                {/* Status Badge */}
-                <div className="absolute top-4 right-4">
-                  {project.status === "DONE" && <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-md font-medium">Done</span>}
-                  {project.status === "ERROR" && <span className="bg-red-100 text-red-700 text-xs px-2 py-1 rounded-md font-medium">Failed</span>}
-                  {!["DONE", "ERROR"].includes(project.status) && <span className="bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded-md font-medium animate-pulse">In Progress</span>}
-                </div>
-
-                <div>
-                  <p className="text-xs text-gray-400 mb-1">
-                    {new Date(project.createdAt).toLocaleDateString()}
-                  </p>
-                  <h3 className="font-bold text-gray-900 text-lg line-clamp-2 mb-1">
-                    {project.title || project.topic}
-                  </h3>
-                  <p className="text-sm text-gray-500 line-clamp-1">Topic: {project.topic}</p>
-                </div>
-
-                <div className="flex items-center justify-between mt-4">
-                  <span className="text-xs text-gray-400">Cost: {project.estimatedCost} credits</span>
-                  {/* Jab user history click kare, hum usko wapas /chat page pe bhej sakte hain purane ID ke sath */}
-                  <Link 
-                    href={`/chat?id=${project.id}`} 
-                    className="text-sm text-blue-600 font-medium hover:underline"
-                  >
-                    View Result →
-                  </Link>
-                </div>
-              </div>
-            ))
+            <>
+              <ProjectList items={items} folders={folders} onMove={handleMove} onDelete={handleDelete} />
+              {nextCursor && (
+                <button
+                  type="button"
+                  disabled={loadingMore}
+                  onClick={() => {
+                    setLoadingMore(true);
+                    void loadList(nextCursor);
+                  }}
+                  className="btn-glass mt-4 w-full"
+                >
+                  {loadingMore ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> : "Load more"}
+                </button>
+              )}
+            </>
           )}
-        </div>
+        </section>
+      </main>
 
+      {/* Neeche: naya script shuru karne ka bar */}
+      <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-xl -translate-x-1/2 bg-gradient-to-t from-taupe via-taupe/95 to-transparent px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-6">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            goCreate();
+          }}
+          className="flex items-center gap-3"
+        >
+          <label htmlFor="new-idea" className="sr-only">
+            Start a new script
+          </label>
+          <input
+            id="new-idea"
+            value={idea}
+            onChange={(e) => setIdea(e.target.value)}
+            maxLength={500}
+            placeholder={openFolder ? `Naya script (${openFolder.name})...` : "Naya script shuru karein..."}
+            className="field min-w-0 flex-1"
+          />
+          <button
+            type="submit"
+            className="flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center rounded-full bg-ember text-center text-sm font-bold leading-tight text-white shadow-glow transition hover:bg-ember-hover active:scale-95"
+          >
+            Go
+            <br />
+            Create
+          </button>
+        </form>
       </div>
+
+      <PlansModal
+        open={plansOpen}
+        onClose={() => setPlansOpen(false)}
+        onPurchased={() => void refreshUser()}
+      />
     </div>
   );
-}
+    }
+        
