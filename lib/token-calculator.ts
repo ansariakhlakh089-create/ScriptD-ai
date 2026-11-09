@@ -1,37 +1,39 @@
-// lib/token-calculator.ts
+// FILE: lib/token-calculator.ts
+// "Token" ka hisaab: AI ne kitna use kiya -> user ke kitne token kate.
+import type { Product, ScriptLength } from "@/lib/constants";
 
-/**
- * Text length ke hisaab se approximate tokens calculate karna
- */
-export const estimateTokenCount = (text: string): number => {
-  if (!text) return 0;
-  // Standard rule: 1 token ≈ 4 characters in English/Hinglish
-  return Math.ceil(text.length / 4);
+// Output token mehnge hote hain, input sasta - isliye input ko 0.25 ginte hain.
+// Real cost dekhkar yahin badal sakte ho.
+export const TOKEN_WEIGHTS = { input: 0.25, output: 1 } as const;
+
+// Har step ke output ki upper limit (kharch control + script beech mein na kate)
+export const STEP_LIMITS: Record<
+  ScriptLength,
+  { research: number; script: number; vprompt: number; maxScenes: number }
+> = {
+  SHORT: { research: 1500, script: 2000, vprompt: 1800, maxScenes: 8 },
+  LONG: { research: 3000, script: 7500, vprompt: 6000, maxScenes: 40 },
 };
 
-/**
- * Model ke hisaab se credit cost nikalna
- * (1 Credit = $0.001 ya jo bhi aapki currency value ho)
- */
-export const calculateExactCost = (
-  taskType: "SHORT" | "DETAILED", 
-  inputTokens: number, 
-  plan: "FREE" | "PAID"
-): number => {
-  let expectedOutputTokens = taskType === "SHORT" ? 500 : 2000;
-  let totalEstimatedTokens = inputTokens + expectedOutputTokens;
+export function chargeFor(promptTokens: number, completionTokens: number): number {
+  return Math.max(
+    0,
+    Math.ceil(promptTokens * TOKEN_WEIGHTS.input + completionTokens * TOKEN_WEIGHTS.output)
+  );
+}
 
-  // Free plan mein internal cost track karne ke liye (User ko nahi dikhega)
-  if (plan === "FREE") {
-    return 0; 
-  }
+// Run shuru karne se pehle ka andaza (taaki kam balance wale ko pehle hi rok sakein)
+export function estimateRunTokens(length: ScriptLength): number {
+  const l = STEP_LIMITS[length];
+  const output = (l.research + l.script + l.vprompt) * 0.6;
+  const input = 800 + l.research * 0.6 + 800 + l.script * 0.6 + 600;
+  return Math.ceil(output * TOKEN_WEIGHTS.output + input * TOKEN_WEIGHTS.input);
+}
 
-  // PAID plan ke liye Claude 3.5 Sonnet + Perplexity Agent + Grok Vision ka combined estimated cost
-  // Example pricing multipliers (Aap isko apne OpenRouter dashboard ke hisaab se adjust kar sakte hain)
-  const baseCostMultiplier = 0.005; // Per 1k tokens cost in credits
-  
-  let calculatedCost = (totalEstimatedTokens / 1000) * baseCostMultiplier;
-  
-  // Minimum 1 credit toh kategi hi
-  return Math.max(1, parseFloat(calculatedCost.toFixed(2)));
-};
+// Pack kharidne par har script ke saath itne token bhi milte hain
+export const PACK_TOKENS_PER_SCRIPT = { LONG: 12000, SHORT: 4000 } as const;
+
+export function tokensForProduct(p: Product): number {
+  if (p.tokens > 0) return p.tokens;
+  return p.longScripts * PACK_TOKENS_PER_SCRIPT.LONG + p.shortScripts * PACK_TOKENS_PER_SCRIPT.SHORT;
+}
