@@ -1,4 +1,4 @@
-/* FILE: app/globals.css */
+/* FILE: app/globals.css  (purani file ko poora replace karo) */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -11,11 +11,11 @@
   }
 
   body {
-    @apply bg-mauve-50 text-ink antialiased;
+    @apply bg-taupe text-cream antialiased;
   }
 
   ::selection {
-    @apply bg-mauve-200 text-ink;
+    @apply bg-ember/40 text-cream;
   }
 
   input,
@@ -26,37 +26,50 @@
   }
 
   :focus-visible {
-    @apply outline-2 outline-offset-2 outline-mauve-500;
+    @apply outline-2 outline-offset-2 outline-ember;
   }
 }
 
 @layer components {
-  .card {
-    @apply rounded-2xl border border-mauve-100 bg-white shadow-soft;
+  /* Login screen ka background */
+  .auth-bg {
+    background: radial-gradient(120% 70% at 50% 35%, #675257 0%, #54474d 50%, #3f353a 100%);
+  }
+
+  /* Shishe jaisa card */
+  .glass {
+    @apply rounded-2xl border border-white/25 bg-white/10 backdrop-blur-sm;
+  }
+
+  .glass-card {
+    @apply rounded-3xl border border-ember/50 bg-plum-glass/70 shadow-glass backdrop-blur;
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
   }
 
-  .btn-primary {
-    @apply btn bg-mauve-700 text-white hover:bg-mauve-800;
+  .btn-ember {
+    @apply btn bg-ember text-white shadow-glow hover:bg-ember-hover;
   }
 
-  .btn-accent {
-    @apply btn bg-ember-500 text-white hover:bg-ember-600;
+  .btn-glass {
+    @apply btn border border-white/30 bg-white/10 text-cream hover:bg-white/20;
   }
 
-  .btn-ghost {
-    @apply btn border border-mauve-200 bg-white text-ink hover:bg-mauve-50;
+  .field {
+    @apply w-full rounded-full border border-white/35 bg-white/10 px-5 py-3.5 text-base text-cream outline-none transition placeholder:text-cream-dim/80 focus:border-ember focus:bg-white/15;
   }
 
   .chip {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-mauve-200 bg-white px-3 py-1.5 text-xs font-medium text-ink transition hover:bg-mauve-50;
+    @apply inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-medium text-cream transition hover:bg-white/20;
   }
 
-  .input {
-    @apply w-full rounded-xl border border-mauve-200 bg-white px-4 py-3 text-sm text-ink outline-none transition placeholder:text-muted focus:border-mauve-500 focus:ring-2 focus:ring-mauve-200;
+  .gradient-text {
+    background-image: linear-gradient(90deg, #fff1ea 0%, #ffb999 55%, #ff7a45 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 }
 
