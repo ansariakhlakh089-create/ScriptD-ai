@@ -1,22 +1,21 @@
-// next.config.mjs
-
+// FILE: next.config.mjs
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Agar external images (Profile pics, etc) use karni hain toh yahan domain likhein
-  images: {
-    remotePatterns: [
+  reactStrictMode: true,
+  poweredByHeader: false,
+  eslint: { ignoreDuringBuilds: true },
+  async headers() {
+    return [
       {
-        protocol: 'https',
-        hostname: '**', // Allow all for now, production mein isko strict kar lena
+        source: "/(.*)",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(self), geolocation=()" },
+        ],
       },
-    ],
-  },
-
-  // Ye setting Next.js ko allow karegi ki external URLs se directly resources fetch ho sakein
-  experimental: {
-    // Agar Next.js 15 use kar rahe hain, toh 'after' middleware enable kar sakte hain 
-    // jo background jobs ke liye best hai bina response delay kiye.
-    // after: true,
+    ];
   },
 };
 
