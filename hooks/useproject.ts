@@ -6,54 +6,50 @@ import { api, ApiError, errorMessage } from "@/lib/api-client";
 import { WORKING_STATUSES } from "@/lib/constants";
 import type { ProjectDTO } from "@/types";
 
-const POLL_MS = 3000;
-
-// Ek project ko load karta hai, aur jab tak kaam chal raha hai har 3 second mein status refresh karta hai
+// Ek project ko dikhata hai aur kaam chalte waqt har 3 second mein khud update karta hai
 export function useProject(projectId: string | null) {
   const [project, setProject] = useState<ProjectDTO | null>(null);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const activeId = useRef<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
+  const failures = useRef(0);
 
-  const fetchProject = useCallback(async (id: string, quiet: boolean) => {
+  const fetchOnce = useCallback(async () => {
+    if (!projectId) return;
     try {
-      const data = await api<{ project: ProjectDTO }>(`/api/project/${id}`);
-      if (activeId.current !== id) return; // purane project ka jawab, ignore
+      const data = await api<{ project: ProjectDTO }>(`/api/project/${projectId}`);
       setProject(data.project);
       setError(null);
+      failures.current = 0;
     } catch (e) {
-      if (activeId.current !== id) return;
-      // Polling ke beech network ki chhoti galti par error mat dikhao (sirf 404 par)
-      if (!quiet || (e instanceof ApiError && e.status === 404)) setError(errorMessage(e));
-    } finally {
-      if (activeId.current === id) setLoading(false);
+      if (e instanceof ApiError && e.status === 404) {
+        setNotFound(true);
+        setError("This script was not found. It may have been deleted.");
+        return;
+      }
+      failures.current += 1;
+      if (failures.current >= 3) setError(errorMessage(e));
     }
-  }, []);
+  }, [projectId]);
 
+  // Project badalte hi sab kuch saaf, phir naya laao
   useEffect(() => {
-    activeId.current = projectId;
+    setProject(null);
     setError(null);
-    if (!projectId) {
-      setProject(null);
-      setLoading(false);
-      return;
-    }
-    setProject((current) => (current && current.id === projectId ? current : null));
-    setLoading(true);
-    void fetchProject(projectId, false);
-  }, [projectId, fetchProject]);
+    setNotFound(false);
+    failures.current = 0;
+    if (projectId) void fetchOnce();
+  }, [projectId, fetchOnce]);
 
-  const isWorking = !!project && (WORKING_STATUSES as string[]).includes(project.status);
+  const working = project ? (WORKING_STATUSES as string[]).includes(project.status) : false;
+  const shouldPoll = Boolean(projectId) && !notFound && (project === null || working);
 
   useEffect(() => {
-    if (!projectId || !isWorking) return;
-    const timer = setInterval(() => void fetchProject(projectId, true), POLL_MS);
+    if (!shouldPoll) return;
+    const timer = setInterval(() => {
+      if (!document.hidden) void fetchOnce(); // tab chhupa ho to request nahi
+    }, 3000);
     return () => clearInterval(timer);
-  }, [projectId, isWorking, fetchProject]);
+  }, [shouldPoll, fetchOnce]);
 
-  const refresh = useCallback(async () => {
-    if (projectId) await fetchProject(projectId, true);
-  }, [projectId, fetchProject]);
-
-  return { project, setProject, loading, error, refresh };
+  return { project, setProject, error, refresh: fetchOnce };
 }
