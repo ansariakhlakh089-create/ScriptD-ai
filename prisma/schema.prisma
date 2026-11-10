@@ -1,7 +1,197 @@
-const nextConfig = {
-  reactStrictMode: true,
-  poweredByHeader: false,
-  eslint: { ignoreDuringBuilds: true },
-  async headers() { ... }
-};
-export default nextConfig;
+// FILE: prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // pooler (6543)
+  directUrl = env("DIRECT_URL")   // direct (5432) - db push ke liye
+}
+
+// =====================================================================
+// 1) LOGIN TABLES (Better Auth ye 4 tables khud use karta hai - naam/fields mat badalna)
+// =====================================================================
+
+model User {
+  id            String   @id
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // ---- ScriptD wallet & limits (ye hamare apne fields hain) ----
+  plan             String    @default("FREE") // FREE | WEEKLY_99 | MONTHLY_699 | MONTHLY_999
+  planExpiresAt    DateTime?
+  tokenBalance     Int       @default(0) // paid tokens (plan + top-up)
+  longScriptsLeft  Int       @default(0)
+  shortScriptsLeft Int       @default(0)
+
+  // ---- Free user ka 24 ghante ka window ----
+  freeWindowStart DateTime  @default(now())
+  freeChatsUsed   Int       @default(0)
+  freeTokensUsed  Int       @default(0)
+  freeScriptsUsed Int       @default(0)
+  adUnlocksUsed   Int       @default(0)
+  lockedUntil     DateTime?
+  lastIpAddress   String?
+
+  sessions Session[]
+  accounts Account[]
+  projects Project[]
+  ledger   TokenLedger[]
+  payments Payment[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// =====================================================================
+// 2) APP TABLES
+// =====================================================================
+
+// Ek Project = ek poori creation: Chat (research) -> Script -> V-Prompt
+model Project {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title  String?
+  topic  String?
+  genre  String? // Type chip: Documentary / Explainer / Comedy ...
+  tone   String?
+  length String  @default("SHORT") // SHORT (1 min) | LONG (10 min)
+
+  // IDLE | RESEARCHING | SCRIPTING | VPROMPTING | DONE | ERROR
+  status       String  @default("IDLE")
+  progressNote String? // "Searching sources...", "Writing script..." - UI mein dikhega
+
+  roadmap     String? @db.Text // Chat tab ka research + roadmap
+  sources     Json? //  [{ title, url, note }]
+  script      String? @db.Text // Script tab
+  description String? @db.Text
+  tags        String?
+  vPrompts    Json? //  [{ line, kind: IMAGE|SCREENSHOT|TEXT, prompt, instruction, sourceUrl, done }]
+
+  tokensCharged Int     @default(0)
+  apiCostUsd    Float   @default(0)
+  errorMessage  String?
+  isSaved       Boolean @default(false)
+
+  messages  Message[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([userId, status])
+  @@map("project")
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  role      String // USER | ASSISTANT
+  content   String   @db.Text
+  tokens    Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([projectId, createdAt])
+  @@map("message")
+}
+
+// Sabke liye shared research cache (sirf research + links; script/chat kabhi share nahi hoti)
+model ResearchCache {
+  id        String   @id @default(cuid())
+  key       String   @unique // normalized topic ka hash
+  topic     String
+  data      String   @db.Text
+  sources   Json
+  hits      Int      @default(0)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([expiresAt])
+  @@map("research_cache")
+}
+
+// Har token ka hisaab (kharch, refund, kharid) - galti hone par yahin se pakdenge
+model TokenLedger {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  delta     Int // minus = kharch, plus = mila
+  reason    String // SIGNUP | USAGE | REFUND | PURCHASE | AD_UNLOCK
+  projectId String?
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("token_ledger")
+}
+
+model Payment {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider    String    @default("RAZORPAY")
+  orderId     String    @unique
+  paymentId   String?   @unique
+  productKey  String // WEEKLY_99 | MONTHLY_699 | MONTHLY_999 | LONG_5 | SHORT_5
+  amountPaise Int
+  currency    String    @default("INR")
+  status      String    @default("CREATED") // CREATED | PAID | FAILED
+  createdAt   DateTime  @default(now())
+  paidAt      DateTime?
+
+  @@index([userId, createdAt])
+  @@map("payment")
+}
