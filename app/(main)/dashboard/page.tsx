@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, CircleAlert, Folder, LoaderCircle, MessageSquare, Sparkles, type LucideIcon } from "lucide-react";
-import AppHeader from "@/components/layout/AppHeader";
+import AppHeader from "@/components/chat/AppHeader";
 import ProjectList from "@/components/dashboard/ProjectList";
 import FolderList from "@/components/dashboard/FolderList";
 import PlansModal from "@/components/monetization/PlansModal";
