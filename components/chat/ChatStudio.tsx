@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LoaderCircle, Menu, Plus } from "lucide-react";
-import TopBar from "@/components/layout/TopBar";
+import TopBar from "@/components/chat/TopBar";
 import ChatsDrawer from "@/components/layout/ChatsDrawer";
 import ChatPanel from "@/components/layout/ChatPanel";
 import ScriptPanel, { scriptEverything } from "@/components/layout/ScriptPanel";
