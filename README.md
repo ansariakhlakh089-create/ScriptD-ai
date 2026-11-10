@@ -8,3 +8,4 @@ Analyze Line-by-Line Visuals in the V-Prompt Tab: Script banne ke turant baad xA
 Generate AI Image Prompts Only Where Needed: Jin scenes mein cinematic visual ya character action chahiye, sirf unke liye copy-ready Prompt box banta hai.
 Provide Interactive Checkboxes for Source/Document Proofs: Jahan kisi research paper, sarkari notice, news article, ya archival letter ka screenshot lagana hai, wahan fokat ka AI image prompt nahi banta—balki Editor Instruction + Checkbox ([ ]) + Source Link milta hai.
 2. 4-Company AI Stack & Cost Breakdown (Per 10-Minute Video)
+3. Image generate api
