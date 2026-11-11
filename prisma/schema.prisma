@@ -43,6 +43,7 @@ model User {
   projects Project[]
   ledger   TokenLedger[]
   payments Payment[]
+  folders  Folder[]       // 👈 NAYA: User ke folders ka relation
 
   @@map("user")
 }
@@ -98,11 +99,29 @@ model Verification {
 // 2) APP TABLES
 // =====================================================================
 
+// 👇 NAYA MODEL: Folder Table (Jo missing tha)
+model Folder {
+  id        String    @id @default(cuid())
+  name      String
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projects  Project[] // Ek folder mein multiple projects ho sakte hain
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("folder")
+}
+
 // Ek Project = ek poori creation: Chat (research) -> Script -> V-Prompt
 model Project {
   id     String @id @default(cuid())
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 👇 NAYA: Project ko Folder se jodne ke liye
+  folderId String?
+  folder   Folder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
 
   title  String?
   topic  String?
@@ -132,6 +151,7 @@ model Project {
 
   @@index([userId, createdAt])
   @@index([userId, status])
+  @@index([folderId]) // 👈 NAYA: Query fast karne ke liye
   @@map("project")
 }
 
