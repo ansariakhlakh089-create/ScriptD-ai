@@ -3,7 +3,8 @@
 import { after } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { missingApiVers } from "@/lib/models";
+// app/api/generate/route.ts
+import { missingAIVars } from "@/lib/models";
 import { getCurrentUser, jsonError, unauthorized } from "@/lib/session";
 import {
   PAID_MAX_WORDS,
