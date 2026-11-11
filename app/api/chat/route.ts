@@ -2,6 +2,7 @@
 // Follow-up sawal: script ban jaane ke baad creator aage poochh sake (jaise "intro aur emotional karo")
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { TaskType } from "@/lib/models";
 import { getCurrentUser, jsonError, unauthorized } from "@/lib/session";
 import { checkFollowUp, handleRouteError, refreshWindow, spendFollowUp } from "@/lib/limits";
 import { callModel } from "@/lib/openrouter";
