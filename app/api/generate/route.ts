@@ -17,7 +17,6 @@ import {
   type Funding,
 } from "@/lib/limits";
 import { FREE_LIMITS } from "@/lib/constants";
-import { missingAIVars } from "@/lib/models";
 import { runPipeline } from "@/lib/pipeline";
 
 export const runtime = "nodejs";
