@@ -38,12 +38,11 @@ export const getModelForTask = (task: TaskType, plan: PlanType) => {
   return registry[task][plan];
 };
 
-// ✅ सबसे महत्वपूर्ण: missingApiVers को सही से एक्सपोर्ट करें
+// ✅ सही तरीका: missingApiVers और getModel को एक्सपोर्ट करें
 export const missingApiVers = () => {
   return ""; 
 };
 
-// ✅ getModel को भी एक्सपोर्ट करें
 export const getModel = getModelForTask; 
 
 export const estimateTaskCost = (task: TaskType, plan: PlanType, inputLength: number): number => {
