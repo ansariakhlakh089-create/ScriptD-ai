@@ -1,4 +1,4 @@
-// FILE: app/layout.tsx  (purani file ko poora replace karo)
+// FILE: app/layout.tsx
 import type { Metadata, Viewport } from "next";
 import { Inter, Noto_Sans_Devanagari } from "next/font/google";
 import "./globals.css";
@@ -7,6 +7,7 @@ const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",
+  preload: false, // 👈 यह जोड़ा गया है (बिल्ड एरर रोकने के लिए)
 });
 
 // Hindi script ke liye (taaki Hindi text sundar dikhe)
@@ -15,6 +16,7 @@ const hindi = Noto_Sans_Devanagari({
   weight: ["400", "500", "600", "700"],
   variable: "--font-hindi",
   display: "swap",
+  preload: false, // 👈 यह जोड़ा गया है (बिल्ड एरर रोकने के लिए)
 });
 
 export const metadata: Metadata = {
