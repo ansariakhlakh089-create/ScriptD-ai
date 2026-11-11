@@ -1,22 +1,63 @@
 // FILE: app/layout.tsx
 import type { Metadata, Viewport } from "next";
-import { Inter, Noto_Sans_Devanagari } from "next/font/google";
+// 1. next/font/google की जगह next/font/local इम्पोर्ट करें
+import localFont from "next/font/local"; 
 import "./globals.css";
 
-const inter = Inter({
-  subsets: ["latin"],
+// 2. Inter फॉन्ट को local कर दिया (Fontsource वाले पैकेज से)
+const inter = localFont({
+  src: [
+    {
+      path: "../../node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../node_modules/@fontsource/inter/files/inter-latin-500-normal.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../../node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../../node_modules/@fontsource/inter/files/inter-latin-700-normal.woff2",
+      weight: "700",
+      style: "normal",
+    },
+  ],
   variable: "--font-inter",
   display: "swap",
-  preload: false, // 👈 यह जोड़ा गया है (बिल्ड एरर रोकने के लिए)
 });
 
-// Hindi script ke liye (taaki Hindi text sundar dikhe)
-const hindi = Noto_Sans_Devanagari({
-  subsets: ["devanagari", "latin"],
-  weight: ["400", "500", "600", "700"],
+// 3. Hindi फॉन्ट को भी local कर दिया
+const hindi = localFont({
+  src: [
+    {
+      path: "../../node_modules/@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-400-normal.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../node_modules/@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-500-normal.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../../node_modules/@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-600-normal.woff2",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../../node_modules/@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-700-normal.woff2",
+      weight: "700",
+      style: "normal",
+    },
+  ],
   variable: "--font-hindi",
   display: "swap",
-  preload: false, // 👈 यह जोड़ा गया है (बिल्ड एरर रोकने के लिए)
 });
 
 export const metadata: Metadata = {
