@@ -84,7 +84,7 @@ export async function POST(req: Request) {
       .map((m) => ({ role: m.role === "ASSISTANT" ? ("ASSISTANT" as const) : ("USER" as const), content: m.content }));
 
     const result = await callModel({
-      model: getModel("CHAT", funding),
+      model: getModel("CHAT" as TaskType, funding),
       messages: followUpMessages({ roadmap: project.roadmap, script: project.script, history, userText: message }),
       maxTokens: 900,
       temperature: 0.7,
