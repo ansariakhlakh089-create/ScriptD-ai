@@ -1,21 +1,17 @@
 // lib/models.ts
-
 export type PlanType = "FREE" | "PAID";
-// 👇 यहाँ "CHAT" जोड़ दिया गया है ताकि route.ts में एरर खत्म हो जाए
 export type TaskType = "RESEARCH" | "SCRIPT" | "VPROMPT" | "QUALITY_CHECK" | "CHAT";
 
-// OpenRouter Model IDs
 export const MODELS = {
   PERPLEXITY_SEARCH: "perplexity/llama-3.1-sonar-small-128k-online",
   PERPLEXITY_AGENT: "perplexity/llama-3.1-sonar-large-128k-online",
   GROQ_FAST: "groq/llama-3.1-70b-versatile",
   CLAUDE_SONNET: "anthropic/claude-3.5-sonnet",
-  GEMINI_FLASH: "google/gemini-1.5-flash", // Used for 3.8 equivalent speed
+  GEMINI_FLASH: "google/gemini-1.5-flash",
   GROK_VISION: "x-ai/grok-2-vision",
-  BACKUP_MODEL: "openai/gpt-4o-mini" // Agar koi model fail ho jaye
+  BACKUP_MODEL: "openai/gpt-4o-mini"
 };
 
-// Har task aur plan ke hisaab se model assign karna
 export const getModelForTask = (task: TaskType, plan: PlanType) => {
   const registry = {
     RESEARCH: {
@@ -34,31 +30,22 @@ export const getModelForTask = (task: TaskType, plan: PlanType) => {
       FREE: { primary: MODELS.GROQ_FAST, backup: MODELS.GEMINI_FLASH, allowWebLinks: false },
       PAID: { primary: MODELS.CLAUDE_SONNET, backup: MODELS.BACKUP_MODEL, allowWebLinks: false },
     },
-    // 👇 CHAT के लिए नया ब्लॉक जोड़ा गया है, वरना रनटाइम पर एरर आता
     CHAT: {
       FREE: { primary: MODELS.GROQ_FAST, backup: MODELS.GEMINI_FLASH, allowWebLinks: false },
       PAID: { primary: MODELS.CLAUDE_SONNET, backup: MODELS.BACKUP_MODEL, allowWebLinks: false },
     }
   };
-
   return registry[task][plan];
 };
 
-// =========================================================================
-// 🔥 Vercel Build Error Fixes
-// =========================================================================
-
-// 1. 'getModel' export (route.ts के लिए)
-export const getModel = getModelForTask; 
-
-// 2. 'missingApiVers' export (generate/route.ts के लिए)
+// ✅ सबसे महत्वपूर्ण: missingApiVers को सही से एक्सपोर्ट करें
 export const missingApiVers = () => {
   return ""; 
 };
 
-// =========================================================================
+// ✅ getModel को भी एक्सपोर्ट करें
+export const getModel = getModelForTask; 
 
-// API Fail hone par token deduction rokne ka aur Cost Estimate ka logic
 export const estimateTaskCost = (task: TaskType, plan: PlanType, inputLength: number): number => {
   const baseCost = plan === "PAID" ? 5 : 1; 
   return baseCost + (inputLength * 0.001); 
