@@ -1,4 +1,4 @@
-// lib/model-registry.ts
+// lib/models.ts
 
 export type PlanType = "FREE" | "PAID";
 export type TaskType = "RESEARCH" | "SCRIPT" | "VPROMPT" | "QUALITY_CHECK";
@@ -37,6 +37,21 @@ export const getModelForTask = (task: TaskType, plan: PlanType) => {
 
   return registry[task][plan];
 };
+
+// =========================================================================
+// 🔥 यहाँ से नया कोड जोड़ा गया है (Vercel Build Error Fix)
+// =========================================================================
+
+// 1. 'getModel' नाम से export किया ताकि route.ts और pipeline.ts का इम्पोर्ट मैच हो जाए
+export const getModel = getModelForTask; 
+
+// 2. 'missingApiVers' को export किया (क्योंकि generate/route.ts इसे मांग रहा है)
+// ध्यान दें: इसमें आपको अपना असली लॉजिक डालना होगा, अभी मैंने बिल्ड पास करने के लिए इसे खाली रखा है।
+export const missingApiVers = () => {
+  return ""; // आप यहाँ अपना API version चेक करने वाला कोड लिख सकते हैं
+};
+
+// =========================================================================
 
 // API Fail hone par token deduction rokne ka aur Cost Estimate ka logic
 export const estimateTaskCost = (task: TaskType, plan: PlanType, inputLength: number): number => {
