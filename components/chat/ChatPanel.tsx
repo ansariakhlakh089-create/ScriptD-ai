@@ -1,7 +1,7 @@
 // FILE: components/chat/ChatPanel.tsx
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Check, CircleAlert, ExternalLink, LoaderCircle } from "lucide-react";
 import CopyButton from "@/components/shared/CopyButton";
 import { SCRIPT_LENGTHS } from "@/lib/constants";
@@ -186,6 +186,8 @@ function Progress({ status, note }: { status: string; note: string | null }) {
 }
 
 export default function ChatPanel({ project, messages, starting, onGoTab, onRetry }: Props) {
+  const [activeDot, setActiveDot] = useState(0);
+
   // Abhi koi project nahi
   if (!project) {
     return (
@@ -219,12 +221,63 @@ export default function ChatPanel({ project, messages, starting, onGoTab, onRetr
   // Pehla message wahi idea hai jo upar bubble mein dikh raha hai, use dobara mat dikhao
   const followUps = messages.filter((m, i) => !(i === 0 && m.role === "USER" && m.content === project.topic));
 
+  // User ke har sawal ka kram (dot navigation ke liye)
+  const userMessageAnchors: { anchorId: string; label: string; msgId?: string }[] = [
+    { anchorId: "user-chat-0", label: project.topic },
+  ];
+  const msgAnchorMap = new Map<string, string>();
+  followUps.forEach((m) => {
+    if (m.role === "USER") {
+      const anchorId = `user-chat-${userMessageAnchors.length}`;
+      msgAnchorMap.set(m.id, anchorId);
+      userMessageAnchors.push({ anchorId, label: m.content, msgId: m.id });
+    }
+  });
+
+  function jumpToChat(index: number, anchorId: string) {
+    setActiveDot(index);
+    const el = document.getElementById(anchorId);
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
   const meta = [project.genre, project.tone, SCRIPT_LENGTHS[project.length].label].filter(Boolean).join(" · ");
 
   return (
-    <div className="space-y-4 pb-4">
-      {/* User ka idea */}
-      <div className="flex justify-end">
+    <div className="relative space-y-4 pb-4 pr-5">
+      {/* Daayin taraf ke chat navigation dots (o-o-o-o) */}
+      <nav
+        aria-label="Jump to your questions"
+        className="fixed right-2 top-1/2 z-20 flex -translate-y-1/2 flex-col items-center"
+      >
+        <div className="relative flex flex-col items-center gap-3">
+          {userMessageAnchors.length > 1 && (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute bottom-1.5 top-1.5 left-1/2 w-px -translate-x-1/2 bg-white/35"
+            />
+          )}
+          {userMessageAnchors.map((item, idx) => {
+            const isCurrent = activeDot === idx;
+            return (
+              <button
+                key={item.anchorId}
+                type="button"
+                onClick={() => jumpToChat(idx, item.anchorId)}
+                title={`Chat ${idx + 1}: ${item.label.slice(0, 40)}`}
+                aria-label={`Jump to question ${idx + 1}`}
+                className={`relative z-10 h-3 w-3 rounded-full border transition ${
+                  isCurrent
+                    ? "scale-110 border-ember bg-ember shadow-glow"
+                    : "border-white/70 bg-plum-deep hover:border-ember-soft hover:bg-ember/40"
+                }`}
+              />
+            );
+          })}
+        </div>
+      </nav>
+
+      {/* User ka pehla idea */}
+      <div id="user-chat-0" className="scroll-mt-4 flex justify-end">
         <div className="max-w-[88%] rounded-2xl rounded-br-md bg-ember/25 px-4 py-3">
           <p className="whitespace-pre-wrap text-base leading-relaxed text-white">{project.topic}</p>
           {meta && <p className="mt-2 text-xs text-ember-soft">{meta}</p>}
@@ -276,7 +329,7 @@ export default function ChatPanel({ project, messages, starting, onGoTab, onRetr
 
       {followUps.map((m) =>
         m.role === "USER" ? (
-          <div key={m.id} className="flex justify-end">
+          <div key={m.id} id={msgAnchorMap.get(m.id)} className="scroll-mt-4 flex justify-end">
             <div className="max-w-[88%] rounded-2xl rounded-br-md bg-ember/25 px-4 py-3">
               <p className="whitespace-pre-wrap text-base leading-relaxed text-white">{m.content}</p>
             </div>
