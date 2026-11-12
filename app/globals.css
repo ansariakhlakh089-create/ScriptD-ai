@@ -45,6 +45,11 @@
     @apply rounded-3xl border border-ember/50 bg-plum-glass/70 shadow-glass backdrop-blur;
   }
 
+  /* Login wala card: blur nahi (phone par halka rahe), dikhta wahi hai */
+  .glass-card-live {
+    @apply rounded-3xl border border-ember/50 bg-plum-glass/75 shadow-glass;
+  }
+
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
   }
@@ -61,6 +66,10 @@
     @apply w-full rounded-full border border-white/35 bg-white/10 px-5 py-3.5 text-base text-cream outline-none transition placeholder:text-cream-dim/80 focus:border-ember focus:bg-white/15;
   }
 
+  .field:focus {
+    box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.18);
+  }
+
   .chip {
     @apply inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-medium text-cream transition hover:bg-white/20;
   }
@@ -71,6 +80,104 @@
     background-clip: text;
     color: transparent;
   }
+
+  /* Chalti hui roshni wala gradient text */
+  .gradient-text-live {
+    background-image: linear-gradient(90deg, #fff1ea 0%, #ffb999 25%, #ff7a45 50%, #ffb999 75%, #fff1ea 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shimmer 5s linear infinite;
+  }
+
+  .title-glow {
+    text-shadow: 0 0 28px rgba(255, 107, 53, 0.45);
+  }
+
+  /* Card ki chamakti kinari */
+  .glow-ring {
+    position: relative;
+  }
+  .glow-ring::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    pointer-events: none;
+    box-shadow: 0 0 30px 2px rgba(255, 107, 53, 0.4);
+    opacity: 0.3;
+    animation: glowpulse 3.2s ease-in-out infinite;
+  }
+
+  .float-slow {
+    animation: floaty 6s ease-in-out infinite;
+  }
+
+  /* Button par guzarti chamak */
+  .btn-shine {
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-shine::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -60%;
+    width: 40%;
+    pointer-events: none;
+    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+    transform: translateX(0) skewX(-20deg);
+    animation: shine 4.5s ease-in-out infinite;
+  }
+
+  /* Login ke peeche ki jaadui chamak */
+  .aurora {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .orb {
+    position: absolute;
+    border-radius: 9999px;
+    will-change: transform;
+  }
+  .orb-1 {
+    width: 22rem;
+    height: 22rem;
+    top: -6rem;
+    left: -7rem;
+    background: radial-gradient(circle at 35% 35%, rgba(255, 107, 53, 0.45), transparent 65%);
+    animation: drift-a 14s ease-in-out infinite alternate;
+  }
+  .orb-2 {
+    width: 20rem;
+    height: 20rem;
+    top: 38%;
+    right: -8rem;
+    background: radial-gradient(circle, rgba(255, 185, 153, 0.3), transparent 65%);
+    animation: drift-b 18s ease-in-out infinite alternate;
+  }
+  .orb-3 {
+    width: 24rem;
+    height: 24rem;
+    bottom: -9rem;
+    left: 5%;
+    background: radial-gradient(circle, rgba(160, 110, 100, 0.55), transparent 65%);
+    animation: drift-a 20s ease-in-out infinite alternate-reverse;
+  }
+  .spark {
+    position: absolute;
+    bottom: -10px;
+    width: 4px;
+    height: 4px;
+    border-radius: 9999px;
+    background: rgba(255, 217, 199, 0.85);
+    opacity: 0;
+    animation: rise 9s linear infinite;
+  }
 }
 
 @layer utilities {
@@ -80,6 +187,74 @@
   }
   .no-scrollbar::-webkit-scrollbar {
     display: none;
+  }
+}
+
+@keyframes shimmer {
+  to {
+    background-position: 200% center;
+  }
+}
+
+@keyframes glowpulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+@keyframes floaty {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes shine {
+  0%,
+  55% {
+    transform: translateX(0) skewX(-20deg);
+  }
+  100% {
+    transform: translateX(420%) skewX(-20deg);
+  }
+}
+
+@keyframes drift-a {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(40px, 50px, 0) scale(1.15);
+  }
+}
+
+@keyframes drift-b {
+  from {
+    transform: translate3d(0, 0, 0) scale(1.1);
+  }
+  to {
+    transform: translate3d(-50px, -40px, 0) scale(0.95);
+  }
+}
+
+@keyframes rise {
+  0% {
+    transform: translateY(0) scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-85vh) scale(1.1);
+    opacity: 0;
   }
 }
 
