@@ -155,7 +155,7 @@ async function stepResearch(
   if (cached) return { ...cached, fromCache: true };
 
   const result = await callModel({
-    model: getModel("RESEARCH", tier),
+        model: getModel("RESEARCH", tier).primary,
     messages: researchMessages(brief),
     maxTokens: STEP_LIMITS[brief.length].research,
     temperature: 0.2,
@@ -184,7 +184,7 @@ async function stepResearch(
 // ---------------------------------------------------------------- step 2: script
 async function stepScript(brief: Brief, researchText: string, tier: Funding, usage: Usage) {
   const result = await callModel({
-    model: getModel("SCRIPT", tier),
+        model: getModel("SCRIPT", tier).primary,
     messages: scriptMessages(brief, researchText),
     maxTokens: STEP_LIMITS[brief.length].script,
     temperature: 0.8,
@@ -215,7 +215,7 @@ async function stepVPrompts(
 ): Promise<VPromptItem[]> {
   const verified = sources.filter((s) => s.verified);
   const result = await callModel({
-    model: getModel("VPROMPT", tier),
+        model: getModel("VPROMPT", tier).primary,
     messages: vpromptMessages(script, verified, length),
     maxTokens: STEP_LIMITS[length].vprompt,
     temperature: 0.6,
