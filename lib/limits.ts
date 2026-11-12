@@ -1,7 +1,7 @@
 // FILE: lib/limits.ts
 // Free/paid ke saare niyam: kaun kitna use kar sakta hai, token kaise kat-te hain, refund kaise hota hai.
 import { db } from "@/lib/db";
-import { FREE_LIMITS, WORKING_STATUSES, type ScriptLength } from "@/lib/constants";
+import { FREE_LIMITS, type ScriptLength } from "@/lib/constants";
 import { estimateRunTokens } from "@/lib/token-calculator";
 import { AIError, friendlyAIMessage } from "@/lib/openrouter";
 import { jsonError, type AppUser } from "@/lib/session";
@@ -70,7 +70,7 @@ export async function refreshWindow(user: AppUser): Promise<AppUser> {
     const activeRun = await db.project.count({
       where: {
         userId: user.id,
-        status: { in: [...WORKING_STATUSES] },
+        status: { in: ["RESEARCHING", "SCRIPTING", "VPROMPTING"] },
       },
     });
     if (activeRun === 0) {
