@@ -1,29 +1,27 @@
 // FILE: app/layout.tsx
 import type { Metadata, Viewport } from "next";
-// 1. next/font/google की जगह next/font/local इम्पोर्ट करें
-import localFont from "next/font/local"; 
+import localFont from "next/font/local";
 import "./globals.css";
 
-// 2. Inter फॉन्ट को local कर दिया (Fontsource वाले पैकेज से)
 const inter = localFont({
   src: [
     {
-      path: "../../node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2",
+      path: "../node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2",
       weight: "400",
       style: "normal",
     },
     {
-      path: "../../node_modules/@fontsource/inter/files/inter-latin-500-normal.woff2",
+      path: "../node_modules/@fontsource/inter/files/inter-latin-500-normal.woff2",
       weight: "500",
       style: "normal",
     },
     {
-      path: "../../node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2",
+      path: "../node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2",
       weight: "600",
       style: "normal",
     },
     {
-      path: "../../node_modules/@fontsource/inter/files/inter-latin-700-normal.woff2",
+      path: "../node_modules/@fontsource/inter/files/inter-latin-700-normal.woff2",
       weight: "700",
       style: "normal",
     },
@@ -32,26 +30,25 @@ const inter = localFont({
   display: "swap",
 });
 
-// 3. Hindi फॉन्ट को भी local कर दिया
 const hindi = localFont({
   src: [
     {
-      path: "../../node_modules/@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-400-normal.woff2",
+      path: "../node_modules/@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-400-normal.woff2",
       weight: "400",
       style: "normal",
     },
     {
-      path: "../../node_modules/@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-500-normal.woff2",
+      path: "../node_modules/@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-500-normal.woff2",
       weight: "500",
       style: "normal",
     },
     {
-      path: "../../node_modules/@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-600-normal.woff2",
+      path: "../node_modules/@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-600-normal.woff2",
       weight: "600",
       style: "normal",
     },
     {
-      path: "../../node_modules/@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-700-normal.woff2",
+      path: "../node_modules/@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-700-normal.woff2",
       weight: "700",
       style: "normal",
     },
