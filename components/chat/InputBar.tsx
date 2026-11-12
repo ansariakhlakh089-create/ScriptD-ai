@@ -124,8 +124,8 @@ export default function InputBar(props: Props) {
   ];
 
   return (
-    <div className="shrink-0 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2">
-      <div className="rounded-3xl border border-white/30 bg-white/10 p-3 backdrop-blur-sm">
+    <div className="shrink-0 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1.5">
+      <div className="rounded-3xl border border-white/30 bg-white/10 p-2.5 backdrop-blur-sm">
         <label htmlFor="studio-input" className="sr-only">
           {placeholder}
         </label>
@@ -143,11 +143,11 @@ export default function InputBar(props: Props) {
             }
           }}
           placeholder={placeholder}
-          className="max-h-40 min-h-[3.25rem] w-full resize-none bg-transparent px-2 py-1 text-base leading-relaxed text-cream outline-none placeholder:text-cream-dim/80 disabled:opacity-60"
+          className="max-h-40 min-h-[3rem] w-full resize-none bg-transparent px-2 py-1 text-base leading-relaxed text-cream outline-none placeholder:text-cream-dim/80 disabled:opacity-60"
         />
 
-        <div className="mt-2 flex items-center gap-2">
-          <div className="no-scrollbar flex min-w-0 flex-1 items-center gap-2 overflow-x-auto">
+        <div className="mt-1.5 flex items-center gap-1.5">
+          <div className="no-scrollbar flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
             {mode === "new" &&
               chips.map((c) => (
                 <button
@@ -155,10 +155,12 @@ export default function InputBar(props: Props) {
                   type="button"
                   disabled={locked}
                   onClick={() => setSheet(c.kind)}
-                  className={`chip shrink-0 ${c.value ? "border-ember/70 bg-ember/15" : ""}`}
+                  className={`inline-flex min-w-0 shrink items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-medium text-cream transition hover:bg-white/20 ${
+                    c.value ? "border-ember/70 bg-ember/15" : "border-white/30 bg-white/10"
+                  }`}
                 >
                   <span className="text-cream-dim">{c.label}</span>
-                  <span className="font-semibold">{c.value ?? "none"}</span>
+                  <span className="max-w-[3.75rem] truncate font-semibold">{c.value ?? "none"}</span>
                 </button>
               ))}
             {mode === "new" && (
@@ -167,9 +169,9 @@ export default function InputBar(props: Props) {
                 disabled={locked}
                 onClick={() => setSheet("more")}
                 aria-label="More options"
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/10 hover:bg-white/20"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/10 hover:bg-white/20"
               >
-                <Plus className="h-4 w-4" aria-hidden />
+                <Plus className="h-3.5 w-3.5" aria-hidden />
               </button>
             )}
             {mode === "followup" && !locked && (
@@ -187,9 +189,9 @@ export default function InputBar(props: Props) {
             onClick={onSend}
             disabled={!canSend}
             aria-label="Send"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-ember text-white shadow-glow transition hover:bg-ember-hover active:scale-95 disabled:opacity-40 disabled:shadow-none"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ember text-white shadow-glow transition hover:bg-ember-hover active:scale-95 disabled:opacity-40 disabled:shadow-none"
           >
-            {busy ? <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden /> : <ArrowUp className="h-5 w-5" aria-hidden />}
+            {busy ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> : <ArrowUp className="h-4 w-4" aria-hidden />}
           </button>
         </div>
       </div>
