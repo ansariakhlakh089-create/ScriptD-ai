@@ -293,17 +293,17 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
       />
 
       {/* ≡  [Chat] [Script] [V-Prompt]  (+) */}
-      <div className="flex items-center gap-2 border-b border-black/20 px-4 py-3">
+      <div className="flex items-center justify-between gap-1.5 border-b border-black/20 px-3 py-1.5">
         <button
           type="button"
           onClick={() => setDrawerOpen(true)}
           aria-label="Your chats"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-cream hover:bg-white/15"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-cream hover:bg-white/15"
         >
-          <Menu className="h-6 w-6" aria-hidden />
+          <Menu className="h-4 w-4" aria-hidden />
         </button>
 
-        <div role="tablist" aria-label="Sections" className="no-scrollbar flex min-w-0 flex-1 items-center gap-2 overflow-x-auto">
+        <div role="tablist" aria-label="Sections" className="no-scrollbar flex min-w-0 flex-1 items-center justify-center gap-1.5">
           {TABS.map(({ key, label }) => {
             const active = tab === key;
             const badge = badges[key];
@@ -314,13 +314,13 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
                 role="tab"
                 aria-selected={active}
                 onClick={() => setTab(key)}
-                className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                className={`inline-flex min-w-0 flex-1 items-center justify-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
                   active ? "border-ember bg-ember/20 text-ember-soft" : "border-white/30 bg-white/10 text-cream hover:bg-white/15"
                 }`}
               >
-                {label}
-                {badge === "loading" && <LoaderCircle className="h-3.5 w-3.5 animate-spin" aria-label="Working" />}
-                {badge === "ready" && <span className="h-2 w-2 rounded-full bg-emerald-300" aria-label="Ready" />}
+                <span className="truncate">{label}</span>
+                {badge === "loading" && <LoaderCircle className="h-3 w-3 shrink-0 animate-spin" aria-label="Working" />}
+                {badge === "ready" && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-300" aria-label="Ready" />}
               </button>
             );
           })}
@@ -330,9 +330,9 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
           type="button"
           onClick={startNew}
           aria-label="New chat"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/10 hover:bg-white/20"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/10 hover:bg-white/20"
         >
-          <Plus className="h-5 w-5" aria-hidden />
+          <Plus className="h-3.5 w-3.5" aria-hidden />
         </button>
       </div>
 
@@ -408,5 +408,4 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
       />
     </div>
   );
-         }
-        
+}
