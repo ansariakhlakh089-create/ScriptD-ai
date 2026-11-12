@@ -1,7 +1,7 @@
 // FILE: lib/limits.ts
 // Free/paid ke saare niyam: kaun kitna use kar sakta hai, token kaise kat-te hain, refund kaise hota hai.
 import { db } from "@/lib/db";
-import { FREE_LIMITS, type ScriptLength } from "@/lib/constants";
+import { FREE_LIMITS, WORKING_STATUSES, type ScriptLength } from "@/lib/constants";
 import { estimateRunTokens } from "@/lib/token-calculator";
 import { AIError, friendlyAIMessage } from "@/lib/openrouter";
 import { jsonError, type AppUser } from "@/lib/session";
@@ -49,20 +49,42 @@ export function windowEnd(user: AppUser): Date {
   return new Date(user.freeWindowStart.getTime() + FREE_LIMITS.resetHours * 3600_000);
 }
 
-// Free window 24 ghante baad apne aap reset
+// Free window 24 ghante baad apne aap reset (aur agar bina token kharch hue counter atka ho to use bhi saaf kare)
 export async function refreshWindow(user: AppUser): Promise<AppUser> {
-  if (Date.now() < windowEnd(user).getTime()) return user;
-  return db.user.update({
-    where: { id: user.id },
-    data: {
-      freeWindowStart: new Date(),
-      freeChatsUsed: 0,
-      freeTokensUsed: 0,
-      freeScriptsUsed: 0,
-      adUnlocksUsed: 0,
-      lockedUntil: null,
-    },
-  });
+  if (Date.now() >= windowEnd(user).getTime()) {
+    return db.user.update({
+      where: { id: user.id },
+      data: {
+        freeWindowStart: new Date(),
+        freeChatsUsed: 0,
+        freeTokensUsed: 0,
+        freeScriptsUsed: 0,
+        adUnlocksUsed: 0,
+        lockedUntil: null,
+      },
+    });
+  }
+
+  // Agar 3,000 free tokens poore bache hain (freeTokensUsed === 0) par pichhla adhura run counter badha gaya tha
+  if (user.freeTokensUsed === 0 && (user.freeChatsUsed > 0 || user.freeScriptsUsed > 0)) {
+    const activeRun = await db.project.count({
+      where: {
+        userId: user.id,
+        status: { in: [...WORKING_STATUSES] },
+      },
+    });
+    if (activeRun === 0) {
+      return db.user.update({
+        where: { id: user.id },
+        data: {
+          freeChatsUsed: 0,
+          freeScriptsUsed: 0,
+        },
+      });
+    }
+  }
+
+  return user;
 }
 
 // Is run ka paisa kahan se katega (models bhi isi se chunte hain)
@@ -116,11 +138,13 @@ export async function reserveRun(user: AppUser, length: ScriptLength): Promise<F
     });
   }
 
+  // Free plan mein agar estimateRunTokens(SHORT) 3,000 se zyada bhi ho, to tokensPerWindow se upar block na kare
+  const freeNeeded = Math.min(needed, FREE_LIMITS.tokensPerWindow);
   const tokensLeft = FREE_LIMITS.tokensPerWindow - user.freeTokensUsed;
   if (
     user.freeChatsUsed >= FREE_LIMITS.chatsPerWindow ||
     user.freeScriptsUsed >= FREE_LIMITS.shortScriptsPerWindow ||
-    tokensLeft < needed
+    tokensLeft < freeNeeded
   ) {
     throw new LimitError(
       "FREE_LIMIT_REACHED",
@@ -135,7 +159,7 @@ export async function reserveRun(user: AppUser, length: ScriptLength): Promise<F
       id: user.id,
       freeChatsUsed: { lt: FREE_LIMITS.chatsPerWindow },
       freeScriptsUsed: { lt: FREE_LIMITS.shortScriptsPerWindow },
-      freeTokensUsed: { lte: FREE_LIMITS.tokensPerWindow - needed },
+      freeTokensUsed: { lte: FREE_LIMITS.tokensPerWindow - freeNeeded },
     },
     data: { freeChatsUsed: { increment: 1 }, freeScriptsUsed: { increment: 1 } },
   });
@@ -311,5 +335,4 @@ export function buildUserSummary(user: AppUser): UserSummary {
       resetsAt: windowEnd(user).toISOString(),
     },
   };
-    }
-  
+}
