@@ -3,7 +3,6 @@
 import { after } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-// app/api/generate/route.ts
 import { missingAIVars } from "@/lib/models";
 import { getCurrentUser, jsonError, unauthorized } from "@/lib/session";
 import {
@@ -13,6 +12,7 @@ import {
   handleRouteError,
   previewFunding,
   refreshWindow,
+  releaseRun,
   reserveRun,
   type Funding,
 } from "@/lib/limits";
@@ -24,8 +24,8 @@ export const maxDuration = 300; // Vercel par Fluid Compute on rakho, warna lamb
 
 const bodySchema = z.object({
   idea: z.string().trim().min(3).max(4000),
-  genre: z.string().trim().max(40).optional(),
-  tone: z.string().trim().max(40).optional(),
+  genre: z.string().trim().max(100).optional(),
+  tone: z.string().trim().max(60).optional(),
   length: z.enum(["SHORT", "LONG"]).default("SHORT"),
   folderId: z.string().min(1).max(64).optional(), // kisi "Your Projects" folder ke andar banana ho to
 });
@@ -95,15 +95,22 @@ export async function POST(req: Request) {
       throw e;
     }
 
-    // 4) Kaam background mein, user ko turant jawab
+    // 4) Kaam background mein, user ko turant jawab (fail hone par credit wapas)
     await db.project.update({
       where: { id: project.id },
       data: { status: "RESEARCHING", progressNote: "Starting..." },
     });
-    after(() => runPipeline({ projectId: project.id, userId: user.id, funding }));
+    after(async () => {
+      try {
+        await runPipeline({ projectId: project.id, userId: user.id, funding });
+      } catch (err) {
+        console.error("[generate:after]", err);
+        await releaseRun(user.id, project.id).catch(() => undefined);
+      }
+    });
 
     return Response.json({ projectId: project.id }, { status: 202 });
   } catch (e) {
     return handleRouteError(e);
   }
-        }
+}
