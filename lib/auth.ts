@@ -7,6 +7,24 @@ import { emailOTP } from "better-auth/plugins";
 import { db } from "@/lib/db";
 import { APP_NAME } from "@/lib/constants";
 
+// ---- Bharosemand (trusted) pate: local + Vercel ke saare pate ----
+function buildTrustedOrigins(): string[] {
+  const origins = new Set<string>(["http://localhost:3000"]);
+  const add = (value?: string) => {
+    if (!value) return;
+    const cleaned = value.trim().replace(/\/+$/, "");
+    if (!cleaned) return;
+    origins.add(cleaned.startsWith("http") ? cleaned : `https://${cleaned}`);
+  };
+  add(process.env.NEXT_PUBLIC_APP_URL);
+  add(process.env.BETTER_AUTH_URL);
+  add(process.env.VERCEL_URL);
+  add(process.env.VERCEL_BRANCH_URL);
+  add(process.env.VERCEL_PROJECT_PRODUCTION_URL);
+  add("https://scriptd-ai.vercel.app");
+  return Array.from(origins);
+}
+
 // ---- Email bhejne ka chhota helper (Resend API) ----
 async function sendEmail(to: string, subject: string, html: string) {
   const apiKey = process.env.RESEND_API_KEY;
@@ -45,7 +63,7 @@ export const auth = betterAuth({
   appName: APP_NAME,
   baseURL: process.env.BETTER_AUTH_URL,
   secret: process.env.BETTER_AUTH_SECRET,
-  trustedOrigins: [process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"],
+  trustedOrigins: buildTrustedOrigins(),
 
   database: prismaAdapter(db, { provider: "postgresql" }),
 
