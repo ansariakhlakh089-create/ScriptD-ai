@@ -223,14 +223,14 @@ export default function ChatPanel({ project, messages, starting, onGoTab, onRetr
 
   // User ke har sawal ka kram (dot navigation ke liye)
   const userMessageAnchors: { anchorId: string; label: string; msgId?: string }[] = [
-    { anchorId: "user-chat-0", label: project.topic },
+    { anchorId: "user-chat-0", label: project.topic ?? "" },
   ];
   const msgAnchorMap = new Map<string, string>();
   followUps.forEach((m) => {
     if (m.role === "USER") {
       const anchorId = `user-chat-${userMessageAnchors.length}`;
       msgAnchorMap.set(m.id, anchorId);
-      userMessageAnchors.push({ anchorId, label: m.content, msgId: m.id });
+      userMessageAnchors.push({ anchorId, label: m.content ?? "", msgId: m.id });
     }
   });
 
