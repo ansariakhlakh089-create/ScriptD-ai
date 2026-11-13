@@ -1,6 +1,4 @@
 // FILE: lib/limits.ts
-// Free/paid ke saare niyam: kaun kitna use kar sakta hai, token kaise kat-te hain, refund kaise hota hai.
-// Plan ke credits (scripts + tokens) plan ki muddat khatam hone ke baad bhi chalte rehte hain.
 import { db } from "@/lib/db";
 import { FREE_LIMITS, type ScriptLength } from "@/lib/constants";
 import { estimateRunTokens } from "@/lib/token-calculator";
@@ -9,10 +7,8 @@ import { jsonError, type AppUser } from "@/lib/session";
 import type { UserSummary } from "@/types";
 
 export type Funding = "PAID" | "FREE";
+export const PAID_MAX_WORDS = 400;
 
-export const PAID_MAX_WORDS = 400; // paid user ke ek message ki word limit
-
-// ---------------------------------------------------------------- error type
 export class LimitError extends Error {
   code: string;
   status: number;
@@ -26,18 +22,16 @@ export class LimitError extends Error {
   }
 }
 
-// Har API route ke catch mein yahi use hota hai
 export function handleRouteError(e: unknown): Response {
   if (e instanceof LimitError) return jsonError(e.status, e.code, e.message, e.extra);
   if (e instanceof AIError) {
-    console.error("[ai]", e.code, e.message);
+    console.error("[api]", e.code, e.message);
     return jsonError(502, "AI_ERROR", friendlyAIMessage(e.code));
   }
   console.error("[api]", e);
   return jsonError(500, "SERVER_ERROR", "Something went wrong. Please try again.");
 }
 
-// ---------------------------------------------------------------- helpers
 export function countWords(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
@@ -50,7 +44,6 @@ export function windowEnd(user: AppUser): Date {
   return new Date(user.freeWindowStart.getTime() + FREE_LIMITS.resetHours * 3600_000);
 }
 
-// Free window 24 ghante baad apne aap reset
 export async function refreshWindow(user: AppUser): Promise<AppUser> {
   if (Date.now() < windowEnd(user).getTime()) return user;
   return db.user.update({
@@ -66,13 +59,11 @@ export async function refreshWindow(user: AppUser): Promise<AppUser> {
   });
 }
 
-// Is run ka paisa kahan se katega (models bhi isi se chunte hain)
 export function previewFunding(user: AppUser, length: ScriptLength): Funding {
   const credit = length === "LONG" ? user.longScriptsLeft : user.shortScriptsLeft;
   return credit > 0 ? "PAID" : "FREE";
 }
 
-// ---------------------------------------------------------------- run shuru karna (credit rok lena)
 export async function reserveRun(user: AppUser, length: ScriptLength): Promise<Funding> {
   const needed = estimateRunTokens(length);
   const label = length === "LONG" ? "long" : "short";
@@ -87,22 +78,27 @@ export async function reserveRun(user: AppUser, length: ScriptLength): Promise<F
       );
     }
 
+    // PAID USER: पूरा टोकन पहले ही काट लो (Reserve कर लो)
     const result =
       length === "LONG"
         ? await db.user.updateMany({
             where: { id: user.id, longScriptsLeft: { gt: 0 }, tokenBalance: { gte: needed } },
-            data: { longScriptsLeft: { decrement: 1 } },
+            data: { longScriptsLeft: { decrement: 1 }, tokenBalance: { decrement: needed } },
           })
         : await db.user.updateMany({
             where: { id: user.id, shortScriptsLeft: { gt: 0 }, tokenBalance: { gte: needed } },
-            data: { shortScriptsLeft: { decrement: 1 } },
+            data: { shortScriptsLeft: { decrement: 1 }, tokenBalance: { decrement: needed } },
           });
 
     if (result.count !== 1) throw new LimitError("BUSY", 409, "Please try again in a moment.");
+
+    await db.tokenLedger.create({
+      data: { userId: user.id, delta: -needed, reason: "RESERVE", meta: { source: "PAID", length } }
+    });
+
     return "PAID";
   }
 
-  // Plan chal raha hai par is type ki script bachi nahi (ya plan mein thi hi nahi)
   if (isPlanActive(user)) {
     throw new LimitError(
       "NO_SCRIPTS_LEFT",
@@ -121,6 +117,7 @@ export async function reserveRun(user: AppUser, length: ScriptLength): Promise<F
     );
   }
 
+  // FREE USER
   const tokensLeft = FREE_LIMITS.tokensPerWindow - user.freeTokensUsed;
   if (
     user.freeChatsUsed >= FREE_LIMITS.chatsPerWindow ||
@@ -135,6 +132,7 @@ export async function reserveRun(user: AppUser, length: ScriptLength): Promise<F
     );
   }
 
+  // FREE USER: पूरा टोकन और काउंट पहले ही काट लो (Reserve कर लो)
   const result = await db.user.updateMany({
     where: {
       id: user.id,
@@ -142,13 +140,21 @@ export async function reserveRun(user: AppUser, length: ScriptLength): Promise<F
       freeScriptsUsed: { lt: FREE_LIMITS.shortScriptsPerWindow },
       freeTokensUsed: { lte: FREE_LIMITS.tokensPerWindow - needed },
     },
-    data: { freeChatsUsed: { increment: 1 }, freeScriptsUsed: { increment: 1 } },
+    data: { 
+      freeChatsUsed: { increment: 1 }, 
+      freeScriptsUsed: { increment: 1 },
+      freeTokensUsed: { increment: needed }
+    },
   });
   if (result.count !== 1) throw new LimitError("BUSY", 409, "Please try again in a moment.");
+
+  await db.tokenLedger.create({
+    data: { userId: user.id, delta: -needed, reason: "RESERVE", meta: { source: "FREE", length } }
+  });
+
   return "FREE";
 }
 
-// ---------------------------------------------------------------- run fail hua: credit wapas
 export async function releaseRun(userId: string, projectId: string): Promise<void> {
   const entries = await db.tokenLedger.findMany({
     where: { userId, projectId, reason: { in: ["RESERVE", "USAGE", "REFUND"] } },
@@ -158,18 +164,27 @@ export async function releaseRun(userId: string, projectId: string): Promise<voi
   if (!reserve || alreadySettled) return;
 
   const meta = reserve.meta as unknown as { source?: Funding; length?: ScriptLength } | null;
+  const reservedAmount = Math.abs(reserve.delta);
 
   await db.$transaction(async (tx) => {
     if (meta?.source === "PAID") {
+      // पैसे वाले यूजर को टोकन और स्क्रिप्ट काउंट दोनों वापस करो
       if (meta.length === "LONG") {
-        await tx.user.update({ where: { id: userId }, data: { longScriptsLeft: { increment: 1 } } });
+        await tx.user.update({ 
+          where: { id: userId }, 
+          data: { longScriptsLeft: { increment: 1 }, tokenBalance: { increment: reservedAmount } } 
+        });
       } else {
-        await tx.user.update({ where: { id: userId }, data: { shortScriptsLeft: { increment: 1 } } });
+        await tx.user.update({ 
+          where: { id: userId }, 
+          data: { shortScriptsLeft: { increment: 1 }, tokenBalance: { increment: reservedAmount } } 
+        });
       }
     } else {
+      // फ्री यूजर के टोकन और काउंट वापस करो
       await tx.user.updateMany({
         where: { id: userId, freeScriptsUsed: { gt: 0 } },
-        data: { freeScriptsUsed: { decrement: 1 } },
+        data: { freeScriptsUsed: { decrement: 1 }, freeTokensUsed: { decrement: reservedAmount } },
       });
       await tx.user.updateMany({
         where: { id: userId, freeChatsUsed: { gt: 0 } },
@@ -182,7 +197,6 @@ export async function releaseRun(userId: string, projectId: string): Promise<voi
   });
 }
 
-// ---------------------------------------------------------------- run poora hua: asli token kaato
 export async function settleRun(args: {
   userId: string;
   projectId: string;
@@ -198,15 +212,29 @@ export async function settleRun(args: {
   if (existing) return;
 
   await db.$transaction(async (tx) => {
+    const reserveEntry = await tx.tokenLedger.findFirst({
+      where: { userId, projectId, reason: "RESERVE" }
+    });
+    const reserved = reserveEntry ? Math.abs(reserveEntry.delta) : 0;
+    const difference = charge - reserved; // असली खर्च और रिजर्व किए गए टोकन का अंतर
+
     if (funding === "PAID") {
-      const row = await tx.user.findUnique({ where: { id: userId }, select: { tokenBalance: true } });
-      const newBalance = Math.max(0, (row?.tokenBalance ?? 0) - charge);
-      await tx.user.update({ where: { id: userId }, data: { tokenBalance: newBalance } });
+      if (difference !== 0) {
+        const row = await tx.user.findUnique({ where: { id: userId }, select: { tokenBalance: true } });
+        const newBalance = Math.max(0, (row?.tokenBalance ?? 0) - difference);
+        await tx.user.update({ where: { id: userId }, data: { tokenBalance: newBalance } });
+      }
     } else {
-      await tx.user.update({ where: { id: userId }, data: { freeTokensUsed: { increment: charge } } });
+      if (difference !== 0) {
+        await tx.user.update({
+          where: { id: userId },
+          data: { freeTokensUsed: { increment: difference } }
+        });
+      }
     }
+    
     await tx.tokenLedger.create({
-      data: { userId, projectId, delta: -charge, reason: "USAGE", meta: { source: funding, costUsd } },
+      data: { userId, projectId, delta: 0, reason: "USAGE", meta: { source: funding, charge, costUsd } },
     });
     await tx.project.update({
       where: { id: projectId },
@@ -215,7 +243,6 @@ export async function settleRun(args: {
   });
 }
 
-// ---------------------------------------------------------------- follow-up chat
 export async function checkFollowUp(user: AppUser, projectId: string, text: string): Promise<Funding> {
   const words = countWords(text);
 
@@ -253,16 +280,7 @@ export async function checkFollowUp(user: AppUser, projectId: string, text: stri
   ]);
 
   if (sent >= FREE_LIMITS.messagesPerChat + unlocks) {
-    const unlocksLeft = FREE_LIMITS.adUnlocksPerWindow - user.adUnlocksUsed;
-    if (unlocksLeft <= 0) {
-      throw new LimitError("FREE_LIMIT_REACHED", 402, "You have used all free messages for now.", {
-        resetsAt: windowEnd(user).toISOString(),
-      });
-    }
-    throw new LimitError("AD_REQUIRED", 402, "Watch ads to unlock one more message.", {
-      adsNeeded: words > FREE_LIMITS.bigQuestionWords ? FREE_LIMITS.adsForBigQuestion : FREE_LIMITS.adsForShortQuestion,
-      unlocksLeft,
-    });
+    throw new LimitError("FREE_LIMIT_REACHED", 402, "You have used all free messages for now.");
   }
 
   return "FREE";
@@ -293,7 +311,6 @@ export async function spendFollowUp(args: {
   });
 }
 
-// ---------------------------------------------------------------- UI ke liye summary
 export function buildUserSummary(user: AppUser): UserSummary {
   const planActive = isPlanActive(user);
   return {
@@ -316,5 +333,4 @@ export function buildUserSummary(user: AppUser): UserSummary {
       resetsAt: windowEnd(user).toISOString(),
     },
   };
-                               }
-  
+          }
