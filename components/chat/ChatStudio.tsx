@@ -12,7 +12,6 @@ import ScriptPanel, { scriptEverything } from "@/components/chat/ScriptPanel";
 import VPromptPanel, { allPromptsText } from "@/components/chat/VPromptPanel";
 import InputBar, { type Selection } from "@/components/chat/InputBar";
 import PlansModal from "@/components/monetization/PlansModal";
-import AdGateModal from "@/components/monetization/AdGateModal";
 import { copyText } from "@/components/shared/CopyButton";
 import { useProject } from "@/hooks/useProject";
 import { useUser } from "@/hooks/useUser";
@@ -35,7 +34,6 @@ interface Props {
   initialFolderId: string | null;
 }
 
-// Topic + Type ko ek line mein jodte hain (API mein Topic ka alag khana nahi hai)
 function composeType(topic: string | null, genre: string | null): string | undefined {
   if (genre && topic) return `${genre} (topic: ${topic})`;
   if (genre) return genre;
@@ -68,13 +66,13 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
     length: "SHORT",
     folderId: initialFolderId,
   });
+
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<MessageDTO[]>([]);
   const [folders, setFolders] = useState<FolderDTO[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [plans, setPlans] = useState<{ open: boolean; message?: string }>({ open: false });
-  const [ad, setAd] = useState({ open: false, adsNeeded: 2, unlocksLeft: 0, pending: "" });
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
@@ -83,23 +81,21 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
 
   const working = project ? (WORKING_STATUSES as string[]).includes(project.status) : false;
 
-  // ---- Right-side dot timeline (chat ka har message ek dot)
   const dots = useMemo(() => buildDots(project, messages), [project, messages]);
 
-  // ---- Credits (top bar mein)
-  const hasPaid = !!user && (user.tokenBalance > 0 || user.longScriptsLeft > 0 || user.shortScriptsLeft > 0);
+  // Credits (top bar mein)
+  const hasPaid = !user || (user.tokenBalance > 0 || user.longScriptsLeft > 0 || user.shortScriptsLeft > 0);
   const credits = user ? (hasPaid ? user.tokenBalance : user.free.tokensLeft) : null;
-  // 400 = paid user ki limit (server par bhi wahi hai). Asli faisla hamesha server karta hai.
   const maxWords = user ? (hasPaid ? 400 : user.free.maxWords) : null;
 
-  // ---- Folders (project mein daalne ke liye)
+  // Folders (project mein daalne ke liye)
   useEffect(() => {
     api<{ folders: FolderDTO[] }>("/api/folders")
       .then((d) => setFolders(d.folders))
       .catch(() => undefined);
   }, []);
 
-  // ---- Script poori ho jaaye to purane follow-up messages laao
+  // Script poori ho jaaye to purane follow-up messages laao
   useEffect(() => {
     if (!projectId || project?.status !== "DONE" || messagesLoadedFor.current === projectId) return;
     messagesLoadedFor.current = projectId;
@@ -108,7 +104,7 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
       .catch(() => undefined);
   }, [projectId, project?.status]);
 
-  // ---- Kaam khatam hote hi credits dobara laao
+  // Kaam khatam hote hi credits dobara laao
   useEffect(() => {
     const status = project?.status ?? null;
     const before = prevStatus.current;
@@ -118,23 +114,14 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
     }
   }, [project?.status, refreshUser]);
 
-  // ---- Chat tab mein hamesha neeche tak scroll
+  // Chat tab mein hamesha neeche tak scroll
   useEffect(() => {
     if (tab === "chat") endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [tab, project?.status, project?.roadmap?.length, messages.length]);
 
-  // ---- Errors ko sahi jagah bhejna
   const handleApiError = useCallback((e: unknown, pending?: string) => {
     if (e instanceof ApiError) {
       switch (e.code) {
-        case "AD_REQUIRED":
-          setAd({
-            open: true,
-            adsNeeded: Number(e.data.adsNeeded ?? 2),
-            unlocksLeft: Number(e.data.unlocksLeft ?? 0),
-            pending: pending ?? "",
-          });
-          return;
         case "UPGRADE_REQUIRED":
         case "NO_SCRIPTS_LEFT":
         case "NOT_ENOUGH_TOKENS":
@@ -149,7 +136,7 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
     setError(errorMessage(e));
   }, []);
 
-  // ---- Naya project shuru
+  // Naya project shuru
   async function startProject() {
     const idea = text.trim();
     if (idea.length < 3) {
@@ -183,7 +170,7 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
     }
   }
 
-  // ---- Follow-up sawal
+  // Follow-up sawal
   async function sendFollowUp(override?: string) {
     const message = (override ?? text).trim();
     if (!projectId || !message) return;
@@ -214,7 +201,7 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
     else void startProject();
   }
 
-  // ---- Naya chat (+)
+  // Naya chat (+)
   function startNew() {
     setProjectId(null);
     setProject(null);
@@ -224,10 +211,10 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
     setError(null);
     setTab("chat");
     setSelection({ topic: null, genre: null, tone: null, length: "SHORT", folderId: null });
-    window.history.replaceState(null, "", "/chat");
+    window.history.replaceState(null, "", `/chat`);
   }
 
-  // ---- Fail hua project dobara try (idea wapas box mein)
+  // Fail hua project dobara try (idea wapas box mein)
   function retry() {
     if (!project) return;
     const length = project.length;
@@ -239,7 +226,7 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
     setSelection((s) => ({ ...s, length, tone, folderId }));
   }
 
-  // ---- Top bar ke kaam
+  // Top bar ke kaam
   async function moveToFolder(folderId: string | null) {
     if (!projectId) return;
     try {
@@ -265,7 +252,7 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
   async function toggleVPrompt(id: number, done: boolean) {
     if (!project || !projectId) return;
     const before = project;
-    setProject({ ...project, vPrompts: project.vPrompts.map((v) => (v.id === id ? { ...v, done } : v)) });
+    setProject((p) => (p ? { ...p, vPrompts: p.vPrompts.map((v) => (v.id === id ? { ...v, done } : v)) } : p));
     try {
       await api(`/api/project/${projectId}`, { method: "PATCH", json: { vPromptId: id, done } });
     } catch (e) {
@@ -274,7 +261,7 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
     }
   }
 
-  // ---- Tabs ke chhote nishaan
+  // Tabs ke chhote nishaan
   const badges: Record<Tab, Badge> = {
     chat: "none",
     script: project?.script ? "ready" : project && (project.status === "RESEARCHING" || project.status === "SCRIPTING") ? "loading" : "none",
@@ -286,8 +273,6 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
   return (
     <div className="mx-auto flex h-dvh w-full max-w-2xl flex-col">
       <TopBar
-        credits={credits}
-        onCreditsClick={() => setPlans({ open: true })}
         hasProject={Boolean(project)}
         canCopyScript={Boolean(project?.script)}
         canCopyPrompts={Boolean(project && project.vPrompts.length > 0)}
@@ -299,7 +284,7 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
         onDelete={deleteProject}
       />
 
-      {/* ≡  [Chat] [Script] [V-prompt]  (+)  — sab ek hi chhoti line mein */}
+      {/* [Chat] [Script] [V-prompt] (+) -- sab ek hi chhoti line mein */}
       <div className="flex items-center gap-1.5 border-b border-black/20 px-3 py-1.5">
         <button
           type="button"
@@ -322,7 +307,7 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
                 aria-selected={active}
                 onClick={() => setTab(key)}
                 className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition ${
-                  active ? "border-ember bg-ember/20 text-ember-soft" : "border-white/25 bg-white/10 text-cream hover:bg-white/15"
+                  active ? "border-ember/20 text-ember-soft bg-ember/10" : "border-white/25 bg-white/5 text-cream hover:bg-white/10"
                 }`}
               >
                 {label}
@@ -337,7 +322,7 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
           type="button"
           onClick={startNew}
           aria-label="New chat"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/10 hover:bg-white/20"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/10 text-cream hover:bg-white/20"
         >
           <Plus className="h-4 w-4" aria-hidden />
         </button>
@@ -368,7 +353,6 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
           )}
           <div ref={endRef} />
         </div>
-
         {showTimeline && <Timeline dots={dots} containerRef={scrollRef} />}
       </div>
 
@@ -404,20 +388,6 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
         onClose={() => setPlans({ open: false })}
         onPurchased={() => void refreshUser()}
       />
-
-      <AdGateModal
-        open={ad.open}
-        projectId={projectId}
-        adsNeeded={ad.adsNeeded}
-        unlocksLeft={ad.unlocksLeft}
-        onClose={() => setAd((a) => ({ ...a, open: false }))}
-        onUnlocked={() => {
-          const pending = ad.pending;
-          setAd((a) => ({ ...a, open: false, pending: "" }));
-          if (pending) void sendFollowUp(pending);
-        }}
-      />
     </div>
   );
-         }
-      
+    }
