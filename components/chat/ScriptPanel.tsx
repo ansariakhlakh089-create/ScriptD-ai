@@ -1,7 +1,7 @@
 // FILE: components/chat/ScriptPanel.tsx
 "use client";
 
-import { LoaderCircle } from "lucide-react";
+import { LoaderCircle, Download } from "lucide-react";
 import CopyButton from "@/components/shared/CopyButton";
 import { WORKING_STATUSES } from "@/lib/constants";
 import type { ProjectDTO } from "@/types";
@@ -22,7 +22,6 @@ function Section({ title, copyText, children }: { title: string; copyText: strin
   );
 }
 
-// Poori script ek saath copy karne ke liye (title + script + description + tags)
 export function scriptEverything(project: ProjectDTO): string {
   return [
     project.title ?? "",
@@ -57,13 +56,32 @@ export default function ScriptPanel({ project }: { project: ProjectDTO | null })
   const minutes = Math.max(1, Math.round(words / 150));
   const everything = scriptEverything(project);
 
+  const handleDownload = () => {
+    const blob = new Blob([everything], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${project.title || "script"}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-4 pb-6">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-cream-dim">
-          {words.toLocaleString("en-IN")} words · about {minutes} min
+      <div className="flex items-center justify-between gap-3 px-1">
+        <p className="text-xs text-cream-dim">
+          <strong className="text-cream">{words.toLocaleString("en-IN")}</strong> words · about {minutes} min
         </p>
-        <CopyButton text={everything} label="Copy everything" />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleDownload}
+            className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs text-cream hover:bg-white/20 transition"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Download
+          </button>
+          <CopyButton text={everything} label="Copy all" />
+        </div>
       </div>
 
       {project.title && (
@@ -73,12 +91,12 @@ export default function ScriptPanel({ project }: { project: ProjectDTO | null })
       )}
 
       <Section title="Script" copyText={project.script}>
-        <p className="whitespace-pre-wrap text-lg leading-relaxed text-cream">{project.script}</p>
+        <p className="whitespace-pre-wrap text-base leading-relaxed text-cream">{project.script}</p>
       </Section>
 
       {project.description && (
         <Section title="Description" copyText={project.description}>
-          <p className="whitespace-pre-wrap text-base leading-relaxed text-cream">{project.description}</p>
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-cream">{project.description}</p>
         </Section>
       )}
 
@@ -86,12 +104,19 @@ export default function ScriptPanel({ project }: { project: ProjectDTO | null })
         <Section title="Tags" copyText={project.tags.join(", ")}>
           <div className="flex flex-wrap gap-2">
             {project.tags.map((tag) => (
-              <span key={tag} className="rounded-full border border-white/25 bg-white/10 px-3 py-1 text-sm text-cream">
+              <span key={tag} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-cream">
                 {tag}
               </span>
             ))}
           </div>
         </Section>
+      )}
+      
+      {/* API Cost Display */}
+      {project.apiCostUsd !== undefined && project.apiCostUsd > 0 && (
+        <p className="text-center text-[10px] text-cream-dim/50 mt-4">
+          API Cost: ${project.apiCostUsd.toFixed(4)} (approx ₹{(project.apiCostUsd * 83).toFixed(2)})
+        </p>
       )}
     </div>
   );
