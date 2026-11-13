@@ -5,21 +5,19 @@ export interface SourceItem {
   title: string;
   url: string;
   note?: string;
-  // true = link AI ke web-search se aaya (asli). false = model ne khud likha (check karke use karo)
   verified: boolean;
 }
 
-// IMAGE = AI image banane ka prompt | SCREENSHOT = asli news/document ka screenshot lena hai
 export type VPromptKind = "IMAGE" | "SCREENSHOT";
 
 export interface VPromptItem {
   id: number;
-  sceneLine: string; // script ki wo line jiske liye visual chahiye
+  sceneLine: string;
   kind: VPromptKind;
-  prompt?: string; // sirf IMAGE ke liye
-  instruction?: string; // sirf SCREENSHOT ke liye
-  sourceUrl?: string | null; // sirf SCREENSHOT ke liye
-  done: boolean; // checkbox [ ] / [x]
+  prompt?: string;
+  instruction?: string;
+  sourceUrl?: string | null;
+  done: boolean;
 }
 
 export interface ProjectDTO {
@@ -31,7 +29,7 @@ export interface ProjectDTO {
   length: ScriptLength;
   status: ProjectStatus;
   progressNote: string | null;
-  roadmap: string | null; // Chat tab: research + script roadmap
+  roadmap: string | null;
   sources: SourceItem[];
   script: string | null;
   description: string | null;
@@ -41,6 +39,7 @@ export interface ProjectDTO {
   isSaved: boolean;
   folderId: string | null;
   tokensCharged: number;
+  apiCostUsd?: number; // नया फील्ड
   createdAt: string;
   updatedAt: string;
 }
@@ -58,7 +57,6 @@ export interface ProjectListItem {
   updatedAt: string;
 }
 
-// UI mein "Project" (naam wala folder)
 export interface FolderDTO {
   id: string;
   name: string;
@@ -78,7 +76,7 @@ export interface UserSummary {
   email: string;
   image: string | null;
   emailVerified: boolean;
-  plan: string; // FREE ya active plan ka key
+  plan: string;
   planExpiresAt: string | null;
   tokenBalance: number;
   longScriptsLeft: number;
@@ -94,9 +92,9 @@ export interface UserSummary {
   };
 }
 
-// Har API error is shape mein aata hai
 export interface ApiErrorBody {
-  error: string; // code, jaise FREE_LIMIT_REACHED, AD_REQUIRED, UPGRADE_REQUIRED
-  message: string; // user ko dikhane layak line
+  error: string;
+  code: string;
+  message: string;
   [key: string]: unknown;
 }
