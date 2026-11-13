@@ -1,12 +1,13 @@
 // FILE: components/chat/ChatStudio.tsx
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LoaderCircle, Menu, Plus } from "lucide-react";
 import TopBar from "@/components/chat/TopBar";
 import ChatsDrawer from "@/components/chat/ChatsDrawer";
-import ChatPanel from "@/components/chat/ChatPanel";
+import ChatPanel, { buildDots } from "@/components/chat/ChatPanel";
+import Timeline from "@/components/chat/Timeline";
 import ScriptPanel, { scriptEverything } from "@/components/chat/ScriptPanel";
 import VPromptPanel, { allPromptsText } from "@/components/chat/VPromptPanel";
 import InputBar, { type Selection } from "@/components/chat/InputBar";
@@ -25,7 +26,7 @@ type Badge = "none" | "loading" | "ready";
 const TABS: { key: Tab; label: string }[] = [
   { key: "chat", label: "Chat" },
   { key: "script", label: "Script" },
-  { key: "vprompt", label: "V-Prompt" },
+  { key: "vprompt", label: "V-prompt" },
 ];
 
 interface Props {
@@ -75,11 +76,15 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
   const [plans, setPlans] = useState<{ open: boolean; message?: string }>({ open: false });
   const [ad, setAd] = useState({ open: false, adsNeeded: 2, unlocksLeft: 0, pending: "" });
 
+  const scrollRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const prevStatus = useRef<string | null>(null);
   const messagesLoadedFor = useRef<string | null>(null);
 
   const working = project ? (WORKING_STATUSES as string[]).includes(project.status) : false;
+
+  // ---- Right-side dot timeline (chat ka har message ek dot)
+  const dots = useMemo(() => buildDots(project, messages), [project, messages]);
 
   // ---- Credits (top bar mein)
   const hasPaid = !!user && (user.tokenBalance > 0 || user.longScriptsLeft > 0 || user.shortScriptsLeft > 0);
@@ -276,6 +281,8 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
     vprompt: project?.status === "DONE" ? "ready" : project?.status === "VPROMPTING" ? "loading" : "none",
   };
 
+  const showTimeline = tab === "chat" && !projectError;
+
   return (
     <div className="mx-auto flex h-dvh w-full max-w-2xl flex-col">
       <TopBar
@@ -292,18 +299,18 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
         onDelete={deleteProject}
       />
 
-      {/* ≡  [Chat] [Script] [V-Prompt]  (+) */}
-      <div className="flex items-center justify-between gap-1.5 border-b border-black/20 px-3 py-1.5">
+      {/* ≡  [Chat] [Script] [V-prompt]  (+)  — sab ek hi chhoti line mein */}
+      <div className="flex items-center gap-1.5 border-b border-black/20 px-3 py-1.5">
         <button
           type="button"
           onClick={() => setDrawerOpen(true)}
           aria-label="Your chats"
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-cream hover:bg-white/15"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-cream hover:bg-white/15"
         >
-          <Menu className="h-4 w-4" aria-hidden />
+          <Menu className="h-5 w-5" aria-hidden />
         </button>
 
-        <div role="tablist" aria-label="Sections" className="no-scrollbar flex min-w-0 flex-1 items-center justify-center gap-1.5">
+        <div role="tablist" aria-label="Sections" className="flex min-w-0 flex-1 items-center justify-center gap-1.5">
           {TABS.map(({ key, label }) => {
             const active = tab === key;
             const badge = badges[key];
@@ -314,13 +321,13 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
                 role="tab"
                 aria-selected={active}
                 onClick={() => setTab(key)}
-                className={`inline-flex min-w-0 flex-1 items-center justify-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
-                  active ? "border-ember bg-ember/20 text-ember-soft" : "border-white/30 bg-white/10 text-cream hover:bg-white/15"
+                className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                  active ? "border-ember bg-ember/20 text-ember-soft" : "border-white/25 bg-white/10 text-cream hover:bg-white/15"
                 }`}
               >
-                <span className="truncate">{label}</span>
-                {badge === "loading" && <LoaderCircle className="h-3 w-3 shrink-0 animate-spin" aria-label="Working" />}
-                {badge === "ready" && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-300" aria-label="Ready" />}
+                {label}
+                {badge === "loading" && <LoaderCircle className="h-3 w-3 animate-spin" aria-label="Working" />}
+                {badge === "ready" && <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" aria-label="Ready" />}
               </button>
             );
           })}
@@ -330,39 +337,43 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
           type="button"
           onClick={startNew}
           aria-label="New chat"
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/10 hover:bg-white/20"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/10 hover:bg-white/20"
         >
-          <Plus className="h-3.5 w-3.5" aria-hidden />
+          <Plus className="h-4 w-4" aria-hidden />
         </button>
       </div>
 
-      {/* Beech ka hissa */}
-      <div className="flex-1 overflow-y-auto px-4 py-5">
-        {projectError ? (
-          <div role="alert" className="rounded-2xl bg-red-950/40 px-4 py-4 text-sm text-red-100">
-            {projectError}
-            <button type="button" onClick={startNew} className="btn-glass mt-3 block">
-              Start a new script
-            </button>
-          </div>
-        ) : tab === "chat" ? (
-          <ChatPanel
-            project={project}
-            messages={messages}
-            starting={sending && !project}
-            onGoTab={(t) => setTab(t)}
-            onRetry={retry}
-          />
-        ) : tab === "script" ? (
-          <ScriptPanel project={project} />
-        ) : (
-          <VPromptPanel project={project} onToggle={(id, done) => void toggleVPrompt(id, done)} />
-        )}
-        <div ref={endRef} />
+      {/* Beech ka hissa (+ right side ki dot timeline) */}
+      <div className="relative min-h-0 flex-1">
+        <div ref={scrollRef} className={`h-full overflow-y-auto py-4 pl-4 ${showTimeline ? "pr-8" : "pr-4"}`}>
+          {projectError ? (
+            <div role="alert" className="rounded-2xl bg-red-950/40 px-4 py-4 text-sm text-red-100">
+              {projectError}
+              <button type="button" onClick={startNew} className="btn-glass mt-3 block">
+                Start a new script
+              </button>
+            </div>
+          ) : tab === "chat" ? (
+            <ChatPanel
+              project={project}
+              messages={messages}
+              starting={sending && !project}
+              onGoTab={(t) => setTab(t)}
+              onRetry={retry}
+            />
+          ) : tab === "script" ? (
+            <ScriptPanel project={project} />
+          ) : (
+            <VPromptPanel project={project} onToggle={(id, done) => void toggleVPrompt(id, done)} />
+          )}
+          <div ref={endRef} />
+        </div>
+
+        {showTimeline && <Timeline dots={dots} containerRef={scrollRef} />}
       </div>
 
       {error && (
-        <div role="alert" className="mx-4 mb-2 flex items-start gap-3 rounded-2xl bg-red-950/50 px-4 py-3 text-sm text-red-100">
+        <div role="alert" className="mx-3 mb-1.5 flex items-start gap-3 rounded-2xl bg-red-950/50 px-4 py-2.5 text-sm text-red-100">
           <span className="flex-1">{error}</span>
           <button type="button" onClick={() => setError(null)} className="font-semibold underline-offset-2 hover:underline">
             Dismiss
@@ -408,4 +419,5 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
       />
     </div>
   );
-}
+         }
+      
