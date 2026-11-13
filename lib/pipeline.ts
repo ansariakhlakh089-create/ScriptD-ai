@@ -1,6 +1,6 @@
 // FILE: lib/pipeline.ts
+import { Prisma, type Project } from "@prisma/client";
 import { z } from "zod";
-import type { Project } from "@prisma/client";
 import { db } from "@/lib/db";
 import type { ProjectStatus, ScriptLength } from "@/lib/constants";
 import { AIError, callModel, extractJson, friendlyAIMessage, type Citation, type ModelResult } from "@/lib/openrouter";
@@ -206,7 +206,7 @@ async function stepVPrompts(
   const verified = sources.filter((s) => s.verified);
   const result = await callModel({
     model: getModel("VPROMPT", tier).primary,
-    messages: vpromptMessages(script, verified, length),
+    messages: vpromptMessages({ script, sources: verified, length }),
     maxTokens: STEP_LIMITS[length].vprompt,
     temperature: 0.6,
     json: true,
@@ -384,4 +384,4 @@ export function toProjectDTO(p: Project): ProjectDTO {
     createdAt: p.createdAt.toISOString(),
     updatedAt: p.updatedAt.toISOString(),
   };
-        }
+  }
