@@ -1,4 +1,4 @@
-// FILE: tailwind.config.ts  (purani file ko poora replace karo)
+// FILE: tailwind.config.ts
 import type { Config } from "tailwindcss";
 
 const config: Config = {
@@ -11,21 +11,23 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Login screen ka gehra plum
-        plum: { DEFAULT: "#54474d", deep: "#3f353a", glass: "#7a5651" },
-        // App screens ka taupe (design jaisa, bas thoda gehra taaki text saaf padhe)
-        taupe: { DEFAULT: "#766964", light: "#8a7c77", deep: "#5f5450" },
-        // Text
-        cream: { DEFAULT: "#fbeee8", dim: "#efdfd7" },
-        // Orange accent
-        ember: { DEFAULT: "#ff6b35", hover: "#f0581f", soft: "#ffd9c7", deep: "#c2410c" },
+        // Primary: Deep Navy / Almost Black
+        plum: { DEFAULT: "#080B18", deep: "#04060D", glass: "#191B32" },
+        // Cards / Containers
+        taupe: { DEFAULT: "#191B32", light: "#232645", deep: "#080B18" },
+        // Text: White & Secondary: Lavender
+        cream: { DEFAULT: "#FFFFFF", dim: "#A995FF" },
+        // Accent: Electric Purple & Secondary: Lavender
+        ember: { DEFAULT: "#7545F5", hover: "#8B62FF", soft: "#A995FF", deep: "#5A32D6" },
+        // VIP: Golden
+        gold: { DEFAULT: "#E9AE36", hover: "#F0BC52", deep: "#C48B1B" },
       },
       fontFamily: {
         sans: ["var(--font-inter)", "var(--font-hindi)", "system-ui", "sans-serif"],
       },
       boxShadow: {
-        glow: "0 10px 30px -8px rgba(255,107,53,0.55)",
-        glass: "0 12px 40px -12px rgba(0,0,0,0.35)",
+        glow: "0 10px 30px -8px rgba(117, 69, 245, 0.45)", // Electric Purple glow
+        glass: "0 12px 40px -12px rgba(0,0,0,0.6)",
       },
       keyframes: {
         "fade-up": {
