@@ -1,4 +1,4 @@
-// FILE: components/chat/Timeline.tsx  (NAYI FILE)
+// FILE: components/chat/Timeline.tsx
 "use client";
 
 import { useEffect, useState, type RefObject } from "react";
@@ -6,10 +6,9 @@ import type { ChatDot } from "@/components/chat/ChatPanel";
 
 interface Props {
   dots: ChatDot[];
-  containerRef: RefObject<HTMLDivElement | null>; // wahi scroll hone wala dabba
+  containerRef: RefObject<HTMLDivElement | null>;
 }
 
-// Right side ki khadi dot-line: har message ek dot, dot dabao to us message par jump
 export default function Timeline({ dots, containerRef }: Props) {
   const [active, setActive] = useState<string | null>(null);
 
@@ -26,7 +25,6 @@ export default function Timeline({ dots, containerRef }: Props) {
         if (node.getBoundingClientRect().top <= limit) current = d.id;
         else break;
       }
-      // Sabse neeche pahunch gaye to aakhri dot active
       if (el.scrollTop + el.clientHeight >= el.scrollHeight - 4) current = dots[dots.length - 1].id;
       setActive(current);
     };
@@ -49,7 +47,7 @@ export default function Timeline({ dots, containerRef }: Props) {
   return (
     <nav
       aria-label="Chat timeline"
-      className="no-scrollbar absolute right-0.5 top-1/2 z-10 flex max-h-[70%] -translate-y-1/2 flex-col items-center overflow-y-auto"
+      className="no-scrollbar absolute right-0.5 top-1/2 z-10 flex max-h-[70%] -translate-y-1/2 flex-col items-center gap-2"
     >
       {dots.map((d) => {
         const isActive = active === d.id;
