@@ -22,9 +22,9 @@ const TABS: { key: Tab; label: string; icon: LucideIcon }[] = [
 ];
 
 const EMPTY_TEXT: Record<Tab, { icon: LucideIcon; lines: [string, string] }> = {
-  chats: { icon: MessageSquare, lines: ["Abhi koi chat nahi hai.", 'Neeche "Go Create" dabakar naya script shuru karein.'] },
+  chats: { icon: MessageSquare, lines: ["Abhi koi chat nahi hai.", "Neeche \"Go Create\" dabakar naya script shuru karein."] },
   creation: { icon: Sparkles, lines: ["Abhi koi creation tayyar nahi hai.", "Jo script poori ban jayegi wo yahan dikhegi."] },
-  projects: { icon: Folder, lines: ["Is project mein abhi koi script nahi hai.", 'Neeche "Go Create" dabakar yahin naya script banayein.'] },
+  projects: { icon: Folder, lines: ["Iss project mein abhi koi script nahi hai.", "Neeche \"Go Create\" dabakar yahan naya script banayein."] },
 };
 
 export default function DashboardPage() {
@@ -44,7 +44,7 @@ export default function DashboardPage() {
   const [plansOpen, setPlansOpen] = useState(false);
   const requestId = useRef(0);
 
-  const showsList = tab !== "projects" || openFolder !== null;
+  const showList = tab !== "projects" || openFolder !== null;
 
   const listUrl = useMemo(() => {
     if (tab === "creation") return "/api/projects?tab=done";
@@ -90,20 +90,20 @@ export default function DashboardPage() {
   }, [loadFolders]);
 
   useEffect(() => {
-    if (!showsList) return;
+    if (!showList) return;
     setLoading(true);
     setItems([]);
     setNextCursor(null);
     void loadList(null);
-  }, [showsList, loadList]);
+  }, [showList, loadList]);
 
   // Kaam chal raha ho to list har 5 second mein khud update
   const hasWorking = items.some((i) => (WORKING_STATUSES as string[]).includes(i.status));
   useEffect(() => {
-    if (!hasWorking || !showsList) return;
+    if (!hasWorking || !showList) return;
     const timer = setInterval(() => void loadList(null), 5000);
     return () => clearInterval(timer);
-  }, [hasWorking, showsList, loadList]);
+  }, [hasWorking, showList, loadList]);
 
   async function handleMove(projectId: string, folderId: string | null) {
     try {
@@ -163,8 +163,8 @@ export default function DashboardPage() {
       <AppHeader user={user} onUpgrade={() => setPlansOpen(true)} />
 
       <main className="flex-1 px-5 pb-44 pt-5">
-        {/* Teen tabs */}
-        <div className="grid grid-cols-3 gap-3" role="tablist" aria-label="Dashboard sections">
+        {/* Teen tabs - Chhota Size */}
+        <div className="grid grid-cols-3 gap-1.5" role="tablist" aria-label="Dashboard sections">
           {TABS.map(({ key, label, icon: Icon }) => {
             const active = tab === key;
             return (
@@ -178,13 +178,13 @@ export default function DashboardPage() {
                   setOpenFolder(null);
                   setError(null);
                 }}
-                className={`flex flex-col items-center gap-2 rounded-2xl border px-2 py-4 text-sm font-semibold transition ${
+                className={`flex items-center justify-center gap-1.5 rounded-xl border px-2 py-2 text-xs font-semibold transition ${
                   active
-                    ? "border-ember bg-ember/20 text-ember-soft"
-                    : "border-white/30 bg-white/10 text-cream hover:bg-white/15"
+                    ? "border-ember/30 bg-ember/15 text-ember-soft"
+                    : "border-white/10 bg-white/5 text-cream hover:bg-white/10"
                 }`}
               >
-                <Icon className={`h-6 w-6 ${active ? "text-ember" : "text-cream"}`} aria-hidden />
+                <Icon className={`h-4 w-4 ${active ? "text-ember" : "text-cream-dim"}`} aria-hidden />
                 {label}
               </button>
             );
@@ -201,18 +201,18 @@ export default function DashboardPage() {
           </div>
         )}
 
-        <section className="mt-6">
+        <section className="mt-4">
           {tab === "projects" && openFolder && (
             <div className="mb-4 flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setOpenFolder(null)}
                 aria-label="Back to projects"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
               >
-                <ChevronLeft className="h-5 w-5" aria-hidden />
+                <ChevronLeft className="h-4 w-4" aria-hidden />
               </button>
-              <h2 className="truncate text-lg font-semibold text-cream">{openFolder.name}</h2>
+              <h2 className="truncate text-sm font-semibold text-cream">{openFolder.name}</h2>
             </div>
           )}
 
@@ -226,12 +226,12 @@ export default function DashboardPage() {
             />
           ) : loading ? (
             <div className="flex justify-center py-16">
-              <LoaderCircle className="h-7 w-7 animate-spin text-cream-dim" aria-label="Loading" />
+              <LoaderCircle className="h-7 w-7 animate-spin text-ember" aria-label="Loading" />
             </div>
           ) : items.length === 0 ? (
-            <div className="px-6 py-16 text-center">
-              <EmptyIcon className="mx-auto h-16 w-16 text-cream-dim/70" strokeWidth={1.5} aria-hidden />
-              <p className="mt-5 text-base leading-relaxed text-cream-dim">
+            <div className="px-4 py-16 text-center">
+              <EmptyIcon className="mx-auto h-14 w-14 text-cream-dim/50" strokeWidth={1.2} aria-hidden />
+              <p className="mt-3 text-sm leading-relaxed text-cream-dim">
                 {empty.lines[0]}
                 <br />
                 {empty.lines[1]}
@@ -258,14 +258,14 @@ export default function DashboardPage() {
         </section>
       </main>
 
-      {/* Neeche: naya script shuru karne ka bar */}
-      <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-xl -translate-x-1/2 bg-gradient-to-t from-taupe via-taupe/95 to-transparent px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-6">
+      {/* Neeche: naya script shuru karne ka bar - sirf input aur button */}
+      <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-xl -translate-x-1/2 bg-gradient-to-t from-plum via-plum/95 to-transparent px-4 pb-4 pt-8">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             goCreate();
           }}
-          className="flex items-center gap-3"
+          className="flex items-center gap-2 rounded-full border border-white/10 bg-taupe p-1.5 shadow-lg"
         >
           <label htmlFor="new-idea" className="sr-only">
             Start a new script
@@ -276,14 +276,12 @@ export default function DashboardPage() {
             onChange={(e) => setIdea(e.target.value)}
             maxLength={500}
             placeholder={openFolder ? `Naya script (${openFolder.name})...` : "Naya script shuru karein..."}
-            className="field min-w-0 flex-1"
+            className="min-w-0 flex-1 bg-transparent px-4 py-2 text-sm text-cream outline-none placeholder:text-cream-dim/70"
           />
           <button
             type="submit"
-            className="flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center rounded-full bg-ember text-center text-sm font-bold leading-tight text-white shadow-glow transition hover:bg-ember-hover active:scale-95"
+            className="flex h-9 shrink-0 items-center justify-center rounded-full bg-ember px-5 text-sm font-semibold text-white shadow-glow transition hover:bg-ember-hover"
           >
-            Go
-            <br />
             Create
           </button>
         </form>
@@ -296,5 +294,4 @@ export default function DashboardPage() {
       />
     </div>
   );
-    }
-        
+        }
