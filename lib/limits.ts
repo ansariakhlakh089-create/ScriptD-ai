@@ -78,7 +78,6 @@ export async function reserveRun(user: AppUser, length: ScriptLength): Promise<F
       );
     }
 
-    // PAID USER: पूरा टोकन पहले ही काट लो (Reserve कर लो)
     const result =
       length === "LONG"
         ? await db.user.updateMany({
@@ -117,7 +116,6 @@ export async function reserveRun(user: AppUser, length: ScriptLength): Promise<F
     );
   }
 
-  // FREE USER
   const tokensLeft = FREE_LIMITS.tokensPerWindow - user.freeTokensUsed;
   if (
     user.freeChatsUsed >= FREE_LIMITS.chatsPerWindow ||
@@ -132,7 +130,6 @@ export async function reserveRun(user: AppUser, length: ScriptLength): Promise<F
     );
   }
 
-  // FREE USER: पूरा टोकन और काउंट पहले ही काट लो (Reserve कर लो)
   const result = await db.user.updateMany({
     where: {
       id: user.id,
@@ -168,7 +165,6 @@ export async function releaseRun(userId: string, projectId: string): Promise<voi
 
   await db.$transaction(async (tx) => {
     if (meta?.source === "PAID") {
-      // पैसे वाले यूजर को टोकन और स्क्रिप्ट काउंट दोनों वापस करो
       if (meta.length === "LONG") {
         await tx.user.update({ 
           where: { id: userId }, 
@@ -181,7 +177,6 @@ export async function releaseRun(userId: string, projectId: string): Promise<voi
         });
       }
     } else {
-      // फ्री यूजर के टोकन और काउंट वापस करो
       await tx.user.updateMany({
         where: { id: userId, freeScriptsUsed: { gt: 0 } },
         data: { freeScriptsUsed: { decrement: 1 }, freeTokensUsed: { decrement: reservedAmount } },
@@ -216,7 +211,7 @@ export async function settleRun(args: {
       where: { userId, projectId, reason: "RESERVE" }
     });
     const reserved = reserveEntry ? Math.abs(reserveEntry.delta) : 0;
-    const difference = charge - reserved; // असली खर्च और रिजर्व किए गए टोकन का अंतर
+    const difference = charge - reserved;
 
     if (funding === "PAID") {
       if (difference !== 0) {
@@ -333,4 +328,4 @@ export function buildUserSummary(user: AppUser): UserSummary {
       resetsAt: windowEnd(user).toISOString(),
     },
   };
-          }
+}
