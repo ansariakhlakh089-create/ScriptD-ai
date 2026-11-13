@@ -26,7 +26,7 @@ export class AIError extends Error {
 }
 
 export function friendlyAIMessage(code: AIErrorCode | string): string {
-  switch (code) {
+  switch (code as AIErrorCode) {
     case "MODEL_NOT_SET":
     case "NO_API_KEY":
       return "AI is not set up yet. Please try again later.";
@@ -331,4 +331,4 @@ export function extractJson(text: string): unknown {
   } catch {
     throw new AIError("BAD_JSON", "Reply was not valid JSON");
   }
-          }
+}
