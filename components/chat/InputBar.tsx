@@ -249,7 +249,7 @@ export default function InputBar(props: Props) {
               </button>
             ))}
           </div>
-          <p className="mt-2 text-xs text-cream-dim">Long scripts need a plan or a script pack.</p>
+          <p className="mt-2 text-xs text-cream-dim">Long scripts come with the Long Pack, the Creator plan or a long-script top-up.</p>
 
           <p className="mt-6 text-xs font-semibold uppercase tracking-wide text-cream-dim">Save in project</p>
           {folders.length === 0 ? (
@@ -272,4 +272,4 @@ export default function InputBar(props: Props) {
     </div>
   );
     }
-              
+            
