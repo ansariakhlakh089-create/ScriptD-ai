@@ -83,19 +83,15 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
 
   const dots = useMemo(() => buildDots(project, messages), [project, messages]);
 
-  // Credits (top bar mein)
   const hasPaid = !user || (user.tokenBalance > 0 || user.longScriptsLeft > 0 || user.shortScriptsLeft > 0);
-  const credits = user ? (hasPaid ? user.tokenBalance : user.free.tokensLeft) : null;
   const maxWords = user ? (hasPaid ? 400 : user.free.maxWords) : null;
 
-  // Folders (project mein daalne ke liye)
   useEffect(() => {
     api<{ folders: FolderDTO[] }>("/api/folders")
       .then((d) => setFolders(d.folders))
       .catch(() => undefined);
   }, []);
 
-  // Script poori ho jaaye to purane follow-up messages laao
   useEffect(() => {
     if (!projectId || project?.status !== "DONE" || messagesLoadedFor.current === projectId) return;
     messagesLoadedFor.current = projectId;
@@ -104,7 +100,6 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
       .catch(() => undefined);
   }, [projectId, project?.status]);
 
-  // Kaam khatam hote hi credits dobara laao
   useEffect(() => {
     const status = project?.status ?? null;
     const before = prevStatus.current;
@@ -114,7 +109,6 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
     }
   }, [project?.status, refreshUser]);
 
-  // Chat tab mein hamesha neeche tak scroll
   useEffect(() => {
     if (tab === "chat") endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [tab, project?.status, project?.roadmap?.length, messages.length]);
@@ -136,7 +130,6 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
     setError(errorMessage(e));
   }, []);
 
-  // Naya project shuru
   async function startProject() {
     const idea = text.trim();
     if (idea.length < 3) {
@@ -170,27 +163,52 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
     }
   }
 
-  // Follow-up sawal
   async function sendFollowUp(override?: string) {
     const message = (override ?? text).trim();
     if (!projectId || !message) return;
     setSending(true);
     setError(null);
+    
+    const tempId = `a-${Date.now()}`;
+    setMessages((prev) => [
+      ...prev,
+      { id: `u-${Date.now()}`, role: "USER", content: message, createdAt: new Date().toISOString() },
+      { id: tempId, role: "ASSISTANT", content: "", createdAt: new Date().toISOString() },
+    ]);
+    setText("");
+
     try {
-      const res = await api<{ reply: string }>("/api/chat", {
+      const res = await fetch("/api/chat", {
         method: "POST",
-        json: { projectId, message },
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId, message }),
       });
-      const now = new Date().toISOString();
-      setMessages((prev) => [
-        ...prev,
-        { id: `u-${Date.now()}`, role: "USER", content: message, createdAt: now },
-        { id: `a-${Date.now()}`, role: "ASSISTANT", content: res.reply, createdAt: now },
-      ]);
-      setText("");
+
+      if (!res.ok) {
+         const err = await res.json();
+         throw new ApiError(res.status, err.code || "ERROR", err.message || "Failed to send message", err);
+      }
+
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullText = "";
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          fullText += chunk;
+          
+          setMessages((prev) => 
+            prev.map(m => m.id === tempId ? { ...m, content: fullText } : m)
+          );
+        }
+      }
       void refreshUser();
     } catch (e) {
       handleApiError(e, message);
+      setMessages((prev) => prev.filter(m => m.id !== tempId));
     } finally {
       setSending(false);
     }
@@ -201,7 +219,6 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
     else void startProject();
   }
 
-  // Naya chat (+)
   function startNew() {
     setProjectId(null);
     setProject(null);
@@ -214,7 +231,6 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
     window.history.replaceState(null, "", `/chat`);
   }
 
-  // Fail hua project dobara try (idea wapas box mein)
   function retry() {
     if (!project) return;
     const length = project.length;
@@ -226,7 +242,6 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
     setSelection((s) => ({ ...s, length, tone, folderId }));
   }
 
-  // Top bar ke kaam
   async function moveToFolder(folderId: string | null) {
     if (!projectId) return;
     try {
@@ -261,7 +276,6 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
     }
   }
 
-  // Tabs ke chhote nishaan
   const badges: Record<Tab, Badge> = {
     chat: "none",
     script: project?.script ? "ready" : project && (project.status === "RESEARCHING" || project.status === "SCRIPTING") ? "loading" : "none",
@@ -284,13 +298,12 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
         onDelete={deleteProject}
       />
 
-      {/* [Chat] [Script] [V-prompt] (+) -- sab ek hi chhoti line mein */}
-      <div className="flex items-center gap-1.5 border-b border-black/20 px-3 py-1.5">
+      <div className="flex items-center gap-1.5 border-b border-white/5 px-3 py-1.5">
         <button
           type="button"
           onClick={() => setDrawerOpen(true)}
           aria-label="Your chats"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-cream hover:bg-white/15"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-cream hover:bg-white/10"
         >
           <Menu className="h-5 w-5" aria-hidden />
         </button>
@@ -307,7 +320,7 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
                 aria-selected={active}
                 onClick={() => setTab(key)}
                 className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition ${
-                  active ? "border-ember/20 text-ember-soft bg-ember/10" : "border-white/25 bg-white/5 text-cream hover:bg-white/10"
+                  active ? "border-ember/30 bg-ember/15 text-ember-soft" : "border-white/10 bg-white/5 text-cream hover:bg-white/10"
                 }`}
               >
                 {label}
@@ -322,13 +335,12 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
           type="button"
           onClick={startNew}
           aria-label="New chat"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/10 text-cream hover:bg-white/20"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-cream hover:bg-white/10"
         >
           <Plus className="h-4 w-4" aria-hidden />
         </button>
       </div>
 
-      {/* Beech ka hissa (+ right side ki dot timeline) */}
       <div className="relative min-h-0 flex-1">
         <div ref={scrollRef} className={`h-full overflow-y-auto py-4 pl-4 ${showTimeline ? "pr-8" : "pr-4"}`}>
           {projectError ? (
@@ -390,4 +402,4 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
       />
     </div>
   );
-    }
+        }
