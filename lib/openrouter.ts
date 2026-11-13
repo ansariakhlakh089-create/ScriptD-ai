@@ -97,7 +97,8 @@ function collectCitations(data: Record<string, unknown>, message: Record<string,
     for (const a of annotations) {
       const c = (a as { type?: string; url_citation?: { url?: string; title?: string } })?.url_citation;
       if ((a as { type?: string })?.type === "url_citation" && c?.url) {
-        found.push({ url: c.url, title: c.title });
+        // यहाँ फिक्स किया गया है: c.title || c.url
+        found.push({ url: c.url, title: c.title || c.url });
       }
     }
   }
@@ -331,4 +332,4 @@ export function extractJson(text: string): unknown {
   } catch {
     throw new AIError("BAD_JSON", "Reply was not valid JSON");
   }
-}
+        }
