@@ -6,8 +6,8 @@ export const APP_NAME = "ScriptD AI";
 export const APP_TAGLINE = "Your Content Creation Journey";
 
 // ---------------------------------------------------------------- types
-export type PlanKey = "FREE" | "WEEKLY_99" | "MONTHLY_699" | "MONTHLY_999";
-export type PackKey = "LONG_5" | "SHORT_5";
+export type PlanKey = "FREE" | "WEEKLY_49" | "WEEKLY_99" | "MONTHLY_249";
+export type PackKey = "LONG_3";
 export type ProductKey = Exclude<PlanKey, "FREE"> | PackKey;
 export type ScriptLength = "SHORT" | "LONG";
 export type ProjectStatus =
@@ -22,11 +22,13 @@ export type ProjectStatus =
 export const WORKING_STATUSES: ProjectStatus[] = ["RESEARCHING", "SCRIPTING", "VPROMPTING"];
 
 // ---------------------------------------------------------------- free tier
+// 3000 tokens mein ek short script (~4000 tokens) poori hi nahi ho paati thi, isliye 8000.
+// Free window har 24 ghante mein reset hoti hai, to ek active free user par roz ~Rs 2-2.5 tak ka kharch.
 export const FREE_LIMITS = {
   resetHours: 24, // free window kitne ghante ka
   chatsPerWindow: 3, // 3 free chats
   messagesPerChat: 5, // har chat mein 5 messages  (TODO: tumne kabhi 7 bhi likha tha - confirm karo)
-  tokensPerWindow: 3000, // sabhi kaam ka ek shared pool
+  tokensPerWindow: 10000, // sabhi kaam ka ek shared pool (1 short script + thodi chat)
   shortScriptsPerWindow: 1, // free mein sirf 1 short script
   longScriptsPerWindow: 0,
   maxWordsPerQuestion: 123, // free user ke sawal ki word limit
@@ -38,80 +40,89 @@ export const FREE_LIMITS = {
 } as const;
 
 // ---------------------------------------------------------------- products
+// Tokens ka aadhaar: 1 long ~ 10,000, 1 short ~ 4,000, upar se ~20% chat/follow-up ke liye.
+// (lib/token-calculator.ts ke andaazon se ek baar mila lena)
 export interface Product {
   key: ProductKey;
   kind: "PLAN" | "PACK";
   label: string;
   pricePaise: number; // 9900 = Rs 99
   days: number; // plan kitne din chalega (pack ke liye 0)
-  tokens: number; // plan ke saath kitne tokens milenge
+  tokens: number; // kharidne par kitne tokens milenge
   longScripts: number;
   shortScripts: number;
   perks: string[];
   highlight?: boolean;
+  badge?: string; // card par chhota nishaan, jaise "Popular"
 }
 
 export const PRODUCTS: Record<ProductKey, Product> = {
+  WEEKLY_49: {
+    key: "WEEKLY_49",
+    kind: "PLAN",
+    label: "Short Pack",
+    pricePaise: 4900,
+    days: 7,
+    tokens: 50000,
+    longScripts: 0,
+    shortScripts: 10,
+    perks: [
+      "10 short scripts",
+      "Research with source links",
+      "Visual prompts for every script",
+      "Title, description and tags",
+    ],
+  },
   WEEKLY_99: {
     key: "WEEKLY_99",
     kind: "PLAN",
-    label: "Weekly",
+    label: "Long Pack",
     pricePaise: 9900,
     days: 7,
     tokens: 35000,
     longScripts: 2,
-    shortScripts: 3,
-    perks: ["2 long + 3 short scripts", "Research with source links", "Visual prompts"],
+    shortScripts: 1, // bonus short script. Hatana ho to 0 kar do
+    perks: [
+      "2 long scripts + 1 bonus short",
+      "Deep research, sources and roadmap",
+      "Visual prompts with screenshot guides",
+      "Title, description and tags",
+    ],
+    badge: "Popular",
   },
-  MONTHLY_699: {
-    key: "MONTHLY_699",
+  MONTHLY_249: {
+    key: "MONTHLY_249",
     kind: "PLAN",
-    label: "Monthly",
-    pricePaise: 69900,
+    label: "Creator",
+    pricePaise: 24900,
     days: 30,
-    tokens: 175000,
-    longScripts: 8,
-    shortScripts: 15,
-    perks: ["8 long + 15 short scripts", "Deeper research", "Visual prompts"],
-    highlight: true,
-  },
-  MONTHLY_999: {
-    key: "MONTHLY_999",
-    kind: "PLAN",
-    label: "Monthly Pro",
-    pricePaise: 99900,
-    days: 30,
-    tokens: 250000,
-    longScripts: 8,
-    shortScripts: 15,
-    perks: ["8 long + 15 short scripts", "Best research + script quality", "Visual prompts + images"],
-  },
-  LONG_5: {
-    key: "LONG_5",
-    kind: "PACK",
-    label: "5 Long scripts",
-    pricePaise: 29900,
-    days: 0,
-    tokens: 0,
+    tokens: 120000,
     longScripts: 5,
-    shortScripts: 0,
-    perks: ["5 extra long scripts"],
+    shortScripts: 10,
+    perks: [
+      "5 long + 10 short scripts",
+      "Best research and the full scene-by-scene roadmap",
+      "Longer questions and project folders",
+      "Visual prompts with screenshot guides",
+    ],
+    highlight: true,
+    badge: "Best value",
   },
-  SHORT_5: {
-    key: "SHORT_5",
+  LONG_3: {
+    key: "LONG_3",
     kind: "PACK",
-    label: "5 Short scripts",
-    pricePaise: 4900, // TODO: tumne Rs 49 ya Rs 99 kaha tha - final karo
+    label: "3 Long scripts",
+    pricePaise: 12900,
     days: 0,
-    tokens: 0,
-    longScripts: 0,
-    shortScripts: 5,
-    perks: ["5 extra short scripts"],
+    tokens: 38000, // pehle packs mein 0 tha, to pack akele par script nahi chalti thi
+    longScripts: 3,
+    shortScripts: 0,
+    perks: ["3 extra long scripts"],
   },
 };
 
-export const PLAN_KEYS: Exclude<PlanKey, "FREE">[] = ["WEEKLY_99", "MONTHLY_699", "MONTHLY_999"];
-export const PACK_KEYS: PackKey[] = ["LONG_5", "SHORT_5"];
+export const PLAN_KEYS: Exclude<PlanKey, "FREE">[] = ["WEEKLY_49", "WEEKLY_99", "MONTHLY_249"];
+export const PACK_KEYS: PackKey[] = ["LONG_3"];
 
 // Client se aaya hua key trust nahi karte - hamesha yahan se verify karke price lete hain
 export function getProduct(key: unknown): Product | null {
