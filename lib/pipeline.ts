@@ -1,8 +1,6 @@
 // FILE: lib/pipeline.ts
-// Poora kaam yahan hota hai: Research -> Script -> Visual prompts.
-// Ye background mein chalta hai; UI status poll karke progress dekhta hai.
 import { z } from "zod";
-import type { Prisma, Project } from "@prisma/client";
+import type { Project } from "@prisma/client";
 import { db } from "@/lib/db";
 import type { ProjectStatus, ScriptLength } from "@/lib/constants";
 import { AIError, callModel, extractJson, friendlyAIMessage, type Citation, type ModelResult } from "@/lib/openrouter";
@@ -13,15 +11,14 @@ import { findCachedResearch, saveResearch } from "@/lib/cache-logic";
 import { releaseRun, settleRun, type Funding } from "@/lib/limits";
 import type { ProjectDTO, SourceItem, VPromptItem } from "@/types";
 
-const STALE_AFTER_MS = 8 * 60 * 1000; // 8 minute se status nahi badla = kaam atak gaya
+const STALE_AFTER_MS = 8 * 60 * 1000;
 
-// ---------------------------------------------------------------- AI reply ke shapes
 const researchSchema = z.object({
   notes: z.string().min(20),
   key_points: z.array(z.string()).nullish(),
-  sources: z
-    .array(z.object({ title: z.string().nullish(), url: z.string(), note: z.string().nullish() }))
-    .nullish(),
+  sources: z.array(
+    z.object({ title: z.string().nullish(), url: z.string(), note: z.string().nullish() })
+  ).nullish(),
 });
 
 const listLike = z.union([z.array(z.string()), z.string()]);
@@ -46,7 +43,6 @@ const vpromptSchema = z.object({
   ),
 });
 
-// ---------------------------------------------------------------- chhote helpers
 interface Usage {
   prompt: number;
   completion: number;
@@ -92,7 +88,6 @@ function assertComplete(result: ModelResult) {
   }
 }
 
-// Links: pehle wo jo AI ke web-search se aaye (asli). Model ke likhe links tabhi jab search wale na mile.
 function mergeSources(
   fromSearch: Citation[],
   fromModel: { title?: string | null; url: string; note?: string | null }[]
@@ -125,7 +120,6 @@ function mergeSources(
     for (const [key, info] of modelInfo) {
       if (seen.has(key)) continue;
       seen.add(key);
-      // key lowercase hai, asli url wapas model list se
       const original = fromModel.map((m) => cleanUrl(m.url)).find((u) => u && urlKey(u) === key);
       if (!original) continue;
       out.push({
@@ -145,7 +139,6 @@ function formatResearch(notes: string, keyPoints: string[]): string {
   return `## Research\n\n${notes.trim()}${points}`;
 }
 
-// ---------------------------------------------------------------- step 1: research
 async function stepResearch(
   brief: Brief,
   tier: Funding,
@@ -155,7 +148,7 @@ async function stepResearch(
   if (cached) return { ...cached, fromCache: true };
 
   const result = await callModel({
-        model: getModel("RESEARCH", tier).primary,
+    model: getModel("RESEARCH", tier).primary,
     messages: researchMessages(brief),
     maxTokens: STEP_LIMITS[brief.length].research,
     temperature: 0.2,
@@ -171,7 +164,6 @@ async function stepResearch(
   const sources = mergeSources(result.citations, parsed.data.sources ?? []);
   const keyPoints = (parsed.data.key_points ?? []).map((s) => s.trim()).filter(Boolean);
 
-  // Sirf tabhi cache karo jab kam se kam ek asli (verified) link mila ho
   if (sources.some((s) => s.verified)) {
     await saveResearch(brief.topic, parsed.data.notes, keyPoints, sources).catch((e) =>
       console.error("[cache] save failed", e)
@@ -181,10 +173,9 @@ async function stepResearch(
   return { notes: parsed.data.notes, keyPoints, sources, fromCache: false };
 }
 
-// ---------------------------------------------------------------- step 2: script
 async function stepScript(brief: Brief, researchText: string, tier: Funding, usage: Usage) {
   const result = await callModel({
-        model: getModel("SCRIPT", tier).primary,
+    model: getModel("SCRIPT", tier).primary,
     messages: scriptMessages(brief, researchText),
     maxTokens: STEP_LIMITS[brief.length].script,
     temperature: 0.8,
@@ -201,11 +192,10 @@ async function stepScript(brief: Brief, researchText: string, tier: Funding, usa
     title: parsed.data.title.trim().slice(0, 120),
     script: parsed.data.script.trim(),
     description: (parsed.data.description ?? "").trim(),
-    tags: toList(parsed.data.tags, /,|\n/).slice(0, 20),
+    tags: toList(parsed.data.tags, /[,\n]/).slice(0, 20),
   };
 }
 
-// ---------------------------------------------------------------- step 3: visual prompts
 async function stepVPrompts(
   script: string,
   sources: SourceItem[],
@@ -215,7 +205,7 @@ async function stepVPrompts(
 ): Promise<VPromptItem[]> {
   const verified = sources.filter((s) => s.verified);
   const result = await callModel({
-        model: getModel("VPROMPT", tier).primary,
+    model: getModel("VPROMPT", tier).primary,
     messages: vpromptMessages(script, verified, length),
     maxTokens: STEP_LIMITS[length].vprompt,
     temperature: 0.6,
@@ -239,7 +229,6 @@ async function stepVPrompts(
       items.push({ id, sceneLine, kind: "IMAGE", prompt: scene.prompt.trim(), done: false });
     } else if (kind === "SCREENSHOT" && scene.instruction?.trim()) {
       const cleaned = scene.source_url ? cleanUrl(scene.source_url) : null;
-      // Sirf wahi link jo humari verified sources list mein hai
       const sourceUrl = cleaned ? allowed.get(urlKey(cleaned)) ?? null : null;
       items.push({ id, sceneLine, kind: "SCREENSHOT", instruction: scene.instruction.trim(), sourceUrl, done: false });
     }
@@ -248,7 +237,6 @@ async function stepVPrompts(
   return items;
 }
 
-// ---------------------------------------------------------------- poora pipeline
 export async function runPipeline(args: { projectId: string; userId: string; funding: Funding }): Promise<void> {
   const { projectId, userId, funding } = args;
   const usage: Usage = { prompt: 0, completion: 0, cost: 0 };
@@ -260,11 +248,11 @@ export async function runPipeline(args: { projectId: string; userId: string; fun
     const length: ScriptLength = project.length === "LONG" ? "LONG" : "SHORT";
     const brief: Brief = { topic: project.topic ?? "", genre: project.genre, tone: project.tone, length };
 
-    // ---- 1) Research
     await db.project.update({
       where: { id: projectId },
       data: { status: "RESEARCHING", progressNote: "Searching and reading sources..." },
     });
+
     const research = await stepResearch(brief, funding, usage);
     const researchText = formatResearch(research.notes, research.keyPoints);
 
@@ -278,7 +266,6 @@ export async function runPipeline(args: { projectId: string; userId: string; fun
       },
     });
 
-    // ---- 2) Script
     const script = await stepScript(brief, researchText, funding, usage);
     const roadmapText = script.roadmap.length
       ? `\n\n## Script roadmap\n${script.roadmap.map((s, i) => `${i + 1}. ${s}`).join("\n")}`
@@ -290,14 +277,13 @@ export async function runPipeline(args: { projectId: string; userId: string; fun
         title: script.title,
         script: script.script,
         description: script.description,
-        tags: script.tags.join(", ").slice(0, 600),
+        tags: script.tags.join(",").slice(0, 600),
         roadmap: researchText + roadmapText,
         status: "VPROMPTING",
         progressNote: "Creating visual prompts...",
       },
     });
 
-    // ---- 3) Visual prompts (yahan galti hui to script bachi rehti hai)
     let vPrompts: VPromptItem[] = [];
     let softError: string | null = null;
     try {
@@ -351,7 +337,6 @@ async function failRun(projectId: string, userId: string, error: unknown): Promi
   }
 }
 
-// Agar server beech mein mar gaya (timeout) aur status atka rah gaya, to use yahan se theek karte hain
 export async function settleIfStale(project: Project): Promise<Project> {
   const working = project.status === "RESEARCHING" || project.status === "SCRIPTING" || project.status === "VPROMPTING";
   if (!working || Date.now() - project.updatedAt.getTime() < STALE_AFTER_MS) return project;
@@ -368,7 +353,6 @@ export async function settleIfStale(project: Project): Promise<Project> {
   return updated;
 }
 
-// ---------------------------------------------------------------- DB row -> UI ko jaane wala data
 const STATUSES: ProjectStatus[] = ["IDLE", "RESEARCHING", "SCRIPTING", "VPROMPTING", "DONE", "ERROR"];
 
 function asArray<T>(value: unknown): T[] {
@@ -396,7 +380,8 @@ export function toProjectDTO(p: Project): ProjectDTO {
     isSaved: p.isSaved,
     folderId: p.folderId,
     tokensCharged: p.tokensCharged,
+    apiCostUsd: p.apiCostUsd,
     createdAt: p.createdAt.toISOString(),
     updatedAt: p.updatedAt.toISOString(),
   };
-}
+        }
