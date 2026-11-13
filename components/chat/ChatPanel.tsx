@@ -7,6 +7,12 @@ import CopyButton from "@/components/shared/CopyButton";
 import ResearchAccordion from "@/components/chat/ResearchAccordion";
 import type { ProjectDTO, VPromptItem, MessageDTO } from "@/types";
 
+export interface ChatDot {
+  id: string;
+  label: string;
+  role: string;
+}
+
 function renderInline(text: string) {
   const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
   return parts.map((part, i) => {
@@ -48,8 +54,8 @@ function RichText({ text }: { text: string }) {
       const heading = line.match(/^#{1,4}\s+(.*)$/);
       if (heading) {
         flush();
-        blocks.push(
-          <h3 key={blocks.length} className="mb-1 mt-4 text-sm font-semibold uppercase tracking-wide text-ember-soft">
+        list.push(
+          <h3 key={list.length} className="mb-1 mt-4 text-sm font-semibold uppercase tracking-wide text-ember-soft">
             {renderInline(heading[1])}
           </h3>
         );
@@ -68,22 +74,22 @@ function RichText({ text }: { text: string }) {
       }
 
       flush();
-      blocks.push(
-        <p key={blocks.length} className="my-2 text-base leading-relaxed text-cream">
+      list.push(
+        <p key={list.length} className="my-2 text-base leading-relaxed text-cream">
           {renderInline(line)}
         </p>
       );
     }
     flush();
 
-    return <div>{blocks}</div>;
+    return <div>{list}</div>;
   }, [text]);
 
   return <div>{blocks}</div>;
 }
 
-export function buildDots(project: ProjectDTO | null, messages: MessageDTO[]) {
-  const dots = [];
+export function buildDots(project: ProjectDTO | null, messages: MessageDTO[]): ChatDot[] {
+  const dots: ChatDot[] = [];
   if (project?.topic) {
     dots.push({ id: "msg-idea", label: "Your idea", role: "user" });
   }
@@ -206,4 +212,4 @@ export default function ChatPanel({
       )}
     </div>
   );
-            }
+}
