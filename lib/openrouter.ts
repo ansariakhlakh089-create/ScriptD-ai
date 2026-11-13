@@ -1,5 +1,4 @@
 // FILE: lib/openrouter.ts
-// OpenRouter se baat karne ka ek hi darwaza. Saare AI calls yahin se jaate hain.
 import { APP_NAME } from "@/lib/constants";
 
 const ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
@@ -26,7 +25,6 @@ export class AIError extends Error {
   }
 }
 
-// User ko dikhane layak (secret/technical baat nahi)
 export function friendlyAIMessage(code: AIErrorCode | string): string {
   switch (code) {
     case "MODEL_NOT_SET":
@@ -54,7 +52,7 @@ export interface ChatMsg {
 
 export interface Citation {
   url: string;
-  title?: string;
+  title: string;
 }
 
 export interface ModelResult {
@@ -72,8 +70,8 @@ interface CallOptions {
   messages: ChatMsg[];
   maxTokens: number;
   temperature?: number;
-  json?: boolean; // JSON mein jawab maango
-  webSearch?: boolean; // internet search chalu karo (research ke liye)
+  json?: boolean;
+  webSearch?: boolean;
   timeoutMs?: number;
 }
 
@@ -93,7 +91,7 @@ function readText(content: unknown): string {
 
 function collectCitations(data: Record<string, unknown>, message: Record<string, unknown> | undefined): Citation[] {
   const found: Citation[] = [];
-
+  
   const annotations = message?.annotations;
   if (Array.isArray(annotations)) {
     for (const a of annotations) {
@@ -104,12 +102,12 @@ function collectCitations(data: Record<string, unknown>, message: Record<string,
     }
   }
 
-  const topLevel = data.citations;
-  if (Array.isArray(topLevel)) {
-    for (const c of topLevel) {
-      if (typeof c === "string") found.push({ url: c });
-      else if (c && typeof c === "object" && typeof (c as { url?: unknown }).url === "string") {
-        found.push({ url: (c as { url: string }).url, title: (c as { title?: string }).title });
+  const toplevel = data.citations;
+  if (Array.isArray(toplevel)) {
+    for (const c of toplevel) {
+      if (typeof c === "string") found.push({ url: c, title: c });
+      else if (c && typeof c === "object" && typeof (c as { url: unknown }).url === "string") {
+        found.push({ url: (c as { url: string }).url, title: (c as { title?: string }).title || (c as { url: string }).url });
       }
     }
   }
@@ -118,7 +116,7 @@ function collectCitations(data: Record<string, unknown>, message: Record<string,
   if (Array.isArray(searchResults)) {
     for (const r of searchResults) {
       const url = (r as { url?: unknown })?.url;
-      if (typeof url === "string") found.push({ url, title: (r as { title?: string }).title });
+      if (typeof url === "string") found.push({ url, title: (r as { title?: string }).title || url });
     }
   }
 
@@ -135,8 +133,7 @@ export async function callModel(opts: CallOptions): Promise<ModelResult> {
   if (!apiKey) throw new AIError("NO_API_KEY", "OPENROUTER_API_KEY is empty");
 
   let model = opts.model;
-  // Perplexity models mein search pehle se hota hai; baaki models par ":online" lagakar search chalu hota hai
-  if (opts.webSearch && !model.startsWith("perplexity/") && !model.endsWith(":online")) {
+  if (opts.webSearch && model.startsWith("perplexity/") && !model.endsWith(":online")) {
     model = `${model}:online`;
   }
 
@@ -176,7 +173,6 @@ export async function callModel(opts: CallOptions): Promise<ModelResult> {
         console.error(`[openrouter] ${res.status} model=${model} ${bodyText.slice(0, 300)}`);
 
         if (res.status === 400 && useJson) {
-          // Is model par JSON mode nahi chalta - bina uske dobara try karo
           useJson = false;
           skipSleep = true;
           lastError = new AIError("AI_FAILED", "JSON mode not supported", true);
@@ -210,7 +206,7 @@ export async function callModel(opts: CallOptions): Promise<ModelResult> {
       };
     } catch (err) {
       if (err instanceof AIError) {
-        if (!err.retryable) throw err;
+        if (err.retryable) throw err;
         lastError = err;
       } else if (err instanceof Error && err.name === "AbortError") {
         lastError = new AIError("TIMEOUT", "Model timed out", true);
@@ -225,16 +221,114 @@ export async function callModel(opts: CallOptions): Promise<ModelResult> {
   throw lastError ?? new AIError("AI_FAILED", "AI call failed");
 }
 
-// Model ke jawab se JSON nikalta hai (``` fences hata deta hai)
+export async function callModelStream(opts: CallOptions, onChunk: (text: string) => void): Promise<ModelResult> {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) throw new AIError("NO_API_KEY", "OPENROUTER_API_KEY is empty");
+
+  let model = opts.model;
+  if (opts.webSearch && model.startsWith("perplexity/") && !model.endsWith(":online")) {
+    model = `${model}:online`;
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 110_000);
+
+  try {
+    const res = await fetch(ENDPOINT, {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+        "X-Title": APP_NAME,
+      },
+      body: JSON.stringify({
+        model,
+        messages: opts.messages,
+        max_tokens: opts.maxTokens,
+        temperature: opts.temperature ?? 0.7,
+        stream: true,
+        stream_options: { include_usage: true },
+        ...(opts.json ? { response_format: { type: "json_object" } } : {}),
+      }),
+    });
+
+    if (!res.ok) {
+      const bodyText = await res.text().catch(() => "");
+      console.error(`[openrouter] ${res.status} model=${model} ${bodyText.slice(0, 300)}`);
+      if (res.status === 401 || res.status === 402 || res.status === 403) throw new AIError("AI_AUTH", `Auth error (${res.status})`);
+      if (res.status === 429) throw new AIError("RATE_LIMIT", "Rate limit");
+      throw new AIError("AI_FAILED", `OpenRouter error (${res.status})`);
+    }
+
+    const reader = res.body?.getReader();
+    if (!reader) throw new AIError("AI_FAILED", "No body in stream");
+
+    const decoder = new TextDecoder();
+    let fullText = "";
+    let usage = { prompt_tokens: 0, completion_tokens: 0, cost: 0 };
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed === "data: [DONE]") continue;
+        if (trimmed.startsWith("data: ")) {
+          try {
+            const json = JSON.parse(trimmed.slice(6));
+            const delta = json.choices?.[0]?.delta?.content || "";
+            if (delta) {
+              fullText += delta;
+              onChunk(delta);
+            }
+            if (json.usage) {
+              usage = json.usage;
+            }
+          } catch (e) {
+            // ignore JSON parse errors for partial chunks
+          }
+        }
+      }
+    }
+
+    if (!fullText.trim()) throw new AIError("EMPTY", "Empty reply from stream");
+
+    return {
+      text: fullText,
+      promptTokens: Number(usage.prompt_tokens ?? 0),
+      completionTokens: Number(usage.completion_tokens ?? 0),
+      costUsd: Number(usage.cost ?? 0),
+      citations: [],
+      finishReason: "stop",
+      model,
+    };
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new AIError("TIMEOUT", "Model timed out");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export function extractJson(text: string): unknown {
   let t = text.trim();
   t = t.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
   const start = t.indexOf("{");
   const end = t.lastIndexOf("}");
-  if (start === -1 || end <= start) throw new AIError("BAD_JSON", "No JSON object in reply");
+  if (start === -1 || end < start) throw new AIError("BAD_JSON", "No JSON object in reply");
   try {
     return JSON.parse(t.slice(start, end + 1));
   } catch {
     throw new AIError("BAD_JSON", "Reply was not valid JSON");
   }
-}
+          }
