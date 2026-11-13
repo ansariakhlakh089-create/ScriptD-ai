@@ -58,7 +58,7 @@ export default function DashboardPage() {
       try {
         const url = cursor ? `${listUrl}&cursor=${encodeURIComponent(cursor)}` : listUrl;
         const data = await api<{ items: ProjectListItem[]; nextCursor: string | null }>(url);
-        if (id !== requestId.current) return; // purana jawab, ignore
+        if (id !== requestId.current) return;
         setItems((prev) => (cursor ? [...prev, ...data.items] : data.items));
         setNextCursor(data.nextCursor);
         setError(null);
@@ -97,7 +97,6 @@ export default function DashboardPage() {
     void loadList(null);
   }, [showList, loadList]);
 
-  // Kaam chal raha ho to list har 5 second mein khud update
   const hasWorking = items.some((i) => (WORKING_STATUSES as string[]).includes(i.status));
   useEffect(() => {
     if (!hasWorking || !showList) return;
@@ -132,7 +131,7 @@ export default function DashboardPage() {
       await loadFolders();
     } catch (e) {
       setError(errorMessage(e));
-      throw e; // form khula rahe, user dobara try kare
+      throw e;
     }
   }
 
@@ -258,7 +257,7 @@ export default function DashboardPage() {
         </section>
       </main>
 
-      {/* Neeche: naya script shuru karne ka bar - sirf input aur button */}
+      {/* Neeche: naya script shuru karne ka bar */}
       <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-xl -translate-x-1/2 bg-gradient-to-t from-plum via-plum/95 to-transparent px-4 pb-4 pt-8">
         <form
           onSubmit={(e) => {
@@ -294,4 +293,4 @@ export default function DashboardPage() {
       />
     </div>
   );
-        }
+    }
