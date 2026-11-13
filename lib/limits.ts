@@ -1,5 +1,6 @@
 // FILE: lib/limits.ts
 // Free/paid ke saare niyam: kaun kitna use kar sakta hai, token kaise kat-te hain, refund kaise hota hai.
+// Plan ke credits (scripts + tokens) plan ki muddat khatam hone ke baad bhi chalte rehte hain.
 import { db } from "@/lib/db";
 import { FREE_LIMITS, type ScriptLength } from "@/lib/constants";
 import { estimateRunTokens } from "@/lib/token-calculator";
@@ -49,42 +50,20 @@ export function windowEnd(user: AppUser): Date {
   return new Date(user.freeWindowStart.getTime() + FREE_LIMITS.resetHours * 3600_000);
 }
 
-// Free window 24 ghante baad apne aap reset (aur agar bina token kharch hue counter atka ho to use bhi saaf kare)
+// Free window 24 ghante baad apne aap reset
 export async function refreshWindow(user: AppUser): Promise<AppUser> {
-  if (Date.now() >= windowEnd(user).getTime()) {
-    return db.user.update({
-      where: { id: user.id },
-      data: {
-        freeWindowStart: new Date(),
-        freeChatsUsed: 0,
-        freeTokensUsed: 0,
-        freeScriptsUsed: 0,
-        adUnlocksUsed: 0,
-        lockedUntil: null,
-      },
-    });
-  }
-
-  // Agar 3,000 free tokens poore bache hain (freeTokensUsed === 0) par pichhla adhura run counter badha gaya tha
-  if (user.freeTokensUsed === 0 && (user.freeChatsUsed > 0 || user.freeScriptsUsed > 0)) {
-    const activeRun = await db.project.count({
-      where: {
-        userId: user.id,
-        status: { in: ["RESEARCHING", "SCRIPTING", "VPROMPTING"] },
-      },
-    });
-    if (activeRun === 0) {
-      return db.user.update({
-        where: { id: user.id },
-        data: {
-          freeChatsUsed: 0,
-          freeScriptsUsed: 0,
-        },
-      });
-    }
-  }
-
-  return user;
+  if (Date.now() < windowEnd(user).getTime()) return user;
+  return db.user.update({
+    where: { id: user.id },
+    data: {
+      freeWindowStart: new Date(),
+      freeChatsUsed: 0,
+      freeTokensUsed: 0,
+      freeScriptsUsed: 0,
+      adUnlocksUsed: 0,
+      lockedUntil: null,
+    },
+  });
 }
 
 // Is run ka paisa kahan se katega (models bhi isi se chunte hain)
@@ -123,28 +102,30 @@ export async function reserveRun(user: AppUser, length: ScriptLength): Promise<F
     return "PAID";
   }
 
+  // Plan chal raha hai par is type ki script bachi nahi (ya plan mein thi hi nahi)
   if (isPlanActive(user)) {
     throw new LimitError(
       "NO_SCRIPTS_LEFT",
       402,
-      `You have used all the ${label} scripts in your plan. Buy a script pack to continue.`,
+      `Your plan has no ${label} scripts available. Buy a top-up or a bigger plan to continue.`,
       { length }
     );
   }
 
   if (length === "LONG") {
-    throw new LimitError("UPGRADE_REQUIRED", 402, "Long scripts need a plan or a script pack.", {
-      feature: "LONG_SCRIPT",
-    });
+    throw new LimitError(
+      "UPGRADE_REQUIRED",
+      402,
+      "Long scripts come with the Long Pack, the Creator plan or a long-script top-up.",
+      { feature: "LONG_SCRIPT" }
+    );
   }
 
-  // Free plan mein agar estimateRunTokens(SHORT) 3,000 se zyada bhi ho, to tokensPerWindow se upar block na kare
-  const freeNeeded = Math.min(needed, FREE_LIMITS.tokensPerWindow);
   const tokensLeft = FREE_LIMITS.tokensPerWindow - user.freeTokensUsed;
   if (
     user.freeChatsUsed >= FREE_LIMITS.chatsPerWindow ||
     user.freeScriptsUsed >= FREE_LIMITS.shortScriptsPerWindow ||
-    tokensLeft < freeNeeded
+    tokensLeft < needed
   ) {
     throw new LimitError(
       "FREE_LIMIT_REACHED",
@@ -159,7 +140,7 @@ export async function reserveRun(user: AppUser, length: ScriptLength): Promise<F
       id: user.id,
       freeChatsUsed: { lt: FREE_LIMITS.chatsPerWindow },
       freeScriptsUsed: { lt: FREE_LIMITS.shortScriptsPerWindow },
-      freeTokensUsed: { lte: FREE_LIMITS.tokensPerWindow - freeNeeded },
+      freeTokensUsed: { lte: FREE_LIMITS.tokensPerWindow - needed },
     },
     data: { freeChatsUsed: { increment: 1 }, freeScriptsUsed: { increment: 1 } },
   });
@@ -335,4 +316,5 @@ export function buildUserSummary(user: AppUser): UserSummary {
       resetsAt: windowEnd(user).toISOString(),
     },
   };
-}
+                               }
+  
