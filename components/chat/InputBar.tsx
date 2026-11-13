@@ -1,7 +1,7 @@
 // FILE: components/chat/InputBar.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowUp, LoaderCircle, Plus, X } from "lucide-react";
 import { GENRES, SCRIPT_LENGTHS, TONES, type ScriptLength } from "@/lib/constants";
 import type { FolderDTO } from "@/types";
@@ -101,6 +101,7 @@ function OptionChips({
 export default function InputBar(props: Props) {
   const { mode, value, onChange, selection, onSelection, folders, onSend, busy, locked, maxWords } = props;
   const [sheet, setSheet] = useState<SheetKind>(null);
+  const areaRef = useRef<HTMLTextAreaElement>(null);
 
   const words = countWords(value);
   const overLimit = maxWords !== null && words > maxWords;
@@ -111,6 +112,14 @@ export default function InputBar(props: Props) {
     : mode === "new"
       ? "Type your idea for creation..."
       : "Ask a follow-up about this script...";
+
+  // Textbox 1 line se shuru, likhne par khud badhta hai (max 8rem)
+  useEffect(() => {
+    const el = areaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
+  }, [value]);
 
   function pick(patch: Partial<Selection>) {
     onSelection(patch);
@@ -123,15 +132,28 @@ export default function InputBar(props: Props) {
     { kind: "tone", label: "Tone", value: selection.tone },
   ];
 
+  const sendButton = (
+    <button
+      type="button"
+      onClick={onSend}
+      disabled={!canSend}
+      aria-label="Send"
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ember text-white shadow-glow transition hover:bg-ember-hover active:scale-95 disabled:opacity-40 disabled:shadow-none"
+    >
+      {busy ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> : <ArrowUp className="h-4 w-4" aria-hidden />}
+    </button>
+  );
+
   return (
-    <div className="shrink-0 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1.5">
-      <div className="rounded-3xl border border-white/30 bg-white/10 p-2.5 backdrop-blur-sm">
+    <div className="shrink-0 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5">
+      <div className="rounded-2xl border border-white/30 bg-white/10 px-2.5 py-2 backdrop-blur-sm">
         <label htmlFor="studio-input" className="sr-only">
           {placeholder}
         </label>
         <textarea
           id="studio-input"
-          rows={2}
+          ref={areaRef}
+          rows={1}
           maxLength={4000}
           value={value}
           disabled={locked}
@@ -143,57 +165,56 @@ export default function InputBar(props: Props) {
             }
           }}
           placeholder={placeholder}
-          className="max-h-40 min-h-[3rem] w-full resize-none bg-transparent px-2 py-1 text-base leading-relaxed text-cream outline-none placeholder:text-cream-dim/80 disabled:opacity-60"
+          className="block max-h-32 min-h-[2.25rem] w-full resize-none bg-transparent px-1.5 py-1.5 text-[15px] leading-snug text-cream outline-none placeholder:text-cream-dim/80 disabled:opacity-60"
         />
 
         <div className="mt-1.5 flex items-center gap-1.5">
-          <div className="no-scrollbar flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
-            {mode === "new" &&
-              chips.map((c) => (
-                <button
-                  key={c.kind}
-                  type="button"
-                  disabled={locked}
-                  onClick={() => setSheet(c.kind)}
-                  className={`inline-flex min-w-0 shrink items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-medium text-cream transition hover:bg-white/20 ${
-                    c.value ? "border-ember/70 bg-ember/15" : "border-white/30 bg-white/10"
-                  }`}
-                >
-                  <span className="text-cream-dim">{c.label}</span>
-                  <span className="max-w-[3.75rem] truncate font-semibold">{c.value ?? "none"}</span>
-                </button>
-              ))}
-            {mode === "new" && (
+          {mode === "new" ? (
+            <>
+              {/* Teeno chip + (+) + send: sab ek hi line mein, koi side-scroll nahi */}
+              <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                {chips.map((c) => (
+                  <button
+                    key={c.kind}
+                    type="button"
+                    disabled={locked}
+                    onClick={() => setSheet(c.kind)}
+                    className={`flex min-w-0 flex-1 basis-0 items-center justify-center gap-1 rounded-full border px-2 py-1 text-[11px] transition hover:bg-white/20 disabled:opacity-50 ${
+                      c.value ? "border-ember/70 bg-ember/15" : "border-white/25 bg-white/10"
+                    }`}
+                  >
+                    <span className="shrink-0 text-cream-dim">{c.label}</span>
+                    <span className="min-w-0 truncate font-semibold text-cream">{c.value ?? "none"}</span>
+                  </button>
+                ))}
+              </div>
               <button
                 type="button"
                 disabled={locked}
                 onClick={() => setSheet("more")}
                 aria-label="More options"
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/10 hover:bg-white/20"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/10 hover:bg-white/20 disabled:opacity-50"
               >
-                <Plus className="h-3.5 w-3.5" aria-hidden />
+                <Plus className="h-4 w-4" aria-hidden />
               </button>
-            )}
-            {mode === "followup" && !locked && (
-              <span className="text-xs text-cream-dim">Ctrl/Cmd + Enter to send</span>
-            )}
-            {maxWords !== null && words > maxWords * 0.7 && (
-              <span className={`shrink-0 text-xs font-medium ${overLimit ? "text-red-200" : "text-cream-dim"}`}>
-                {words}/{maxWords} words
-              </span>
-            )}
-          </div>
-
-          <button
-            type="button"
-            onClick={onSend}
-            disabled={!canSend}
-            aria-label="Send"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ember text-white shadow-glow transition hover:bg-ember-hover active:scale-95 disabled:opacity-40 disabled:shadow-none"
-          >
-            {busy ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> : <ArrowUp className="h-4 w-4" aria-hidden />}
-          </button>
+            </>
+          ) : (
+            <div className="min-w-0 flex-1 px-1.5">
+              {maxWords !== null && words > maxWords * 0.7 && (
+                <span className={`text-xs font-medium ${overLimit ? "text-red-200" : "text-cream-dim"}`}>
+                  {words}/{maxWords} words
+                </span>
+              )}
+            </div>
+          )}
+          {sendButton}
         </div>
+
+        {mode === "new" && maxWords !== null && words > maxWords * 0.7 && (
+          <p className={`mt-1 px-1.5 text-right text-xs font-medium ${overLimit ? "text-red-200" : "text-cream-dim"}`}>
+            {words}/{maxWords} words
+          </p>
+        )}
       </div>
 
       {sheet === "topic" && (
@@ -250,4 +271,5 @@ export default function InputBar(props: Props) {
       )}
     </div>
   );
-}
+    }
+              
