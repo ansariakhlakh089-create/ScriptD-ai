@@ -16,15 +16,15 @@ import type { FolderDTO, ProjectListItem } from "@/types";
 type Tab = "chats" | "creation" | "projects";
 
 const TABS: { key: Tab; label: string; icon: LucideIcon }[] = [
-  { key: "chats", label: "Your Chats", icon: MessageSquare },
-  { key: "creation", label: "Your Creation", icon: Sparkles },
-  { key: "projects", label: "Your Projects", icon: Folder },
+  { key: "chats", label: "Chats", icon: MessageSquare },
+  { key: "creation", label: "Creations", icon: Sparkles },
+  { key: "projects", label: "Projects", icon: Folder },
 ];
 
 const EMPTY_TEXT: Record<Tab, { icon: LucideIcon; lines: [string, string] }> = {
-  chats: { icon: MessageSquare, lines: ["Abhi koi chat nahi hai.", "Neeche \"Go Create\" dabakar naya script shuru karein."] },
-  creation: { icon: Sparkles, lines: ["Abhi koi creation tayyar nahi hai.", "Jo script poori ban jayegi wo yahan dikhegi."] },
-  projects: { icon: Folder, lines: ["Iss project mein abhi koi script nahi hai.", "Neeche \"Go Create\" dabakar yahan naya script banayein."] },
+  chats: { icon: MessageSquare, lines: ["No chats yet.", "Tap Create below to start a new script."] },
+  creation: { icon: Sparkles, lines: ["No finished scripts yet.", "Completed scripts will appear here."] },
+  projects: { icon: Folder, lines: ["This project has no scripts yet.", "Tap Create below to add one here."] },
 };
 
 export default function DashboardPage() {
@@ -162,7 +162,7 @@ export default function DashboardPage() {
       <AppHeader user={user} onUpgrade={() => setPlansOpen(true)} />
 
       <main className="flex-1 px-5 pb-44 pt-5">
-        {/* Teen tabs - Chhota Size */}
+        {/* Section tabs */}
         <div className="grid grid-cols-3 gap-1.5" role="tablist" aria-label="Dashboard sections">
           {TABS.map(({ key, label, icon: Icon }) => {
             const active = tab === key;
@@ -177,7 +177,7 @@ export default function DashboardPage() {
                   setOpenFolder(null);
                   setError(null);
                 }}
-                className={`flex items-center justify-center gap-1.5 rounded-xl border px-2 py-2 text-xs font-semibold transition ${
+                className={`flex min-h-11 items-center justify-center gap-1.5 rounded-xl border px-2 py-2.5 text-sm font-semibold transition ${
                   active
                     ? "border-ember/30 bg-ember/15 text-ember-soft"
                     : "border-white/10 bg-white/5 text-cream hover:bg-white/10"
@@ -194,7 +194,7 @@ export default function DashboardPage() {
           <div role="alert" className="mt-5 flex items-start gap-3 rounded-2xl bg-red-950/40 px-4 py-3 text-sm text-red-100">
             <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
             <span className="flex-1">{error}</span>
-            <button type="button" onClick={() => setError(null)} className="font-semibold underline-offset-2 hover:underline">
+            <button type="button" onClick={() => setError(null)} className="px-2 py-1 font-semibold underline-offset-2 hover:underline">
               Dismiss
             </button>
           </div>
@@ -207,11 +207,11 @@ export default function DashboardPage() {
                 type="button"
                 onClick={() => setOpenFolder(null)}
                 aria-label="Back to projects"
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
               >
                 <ChevronLeft className="h-4 w-4" aria-hidden />
               </button>
-              <h2 className="truncate text-sm font-semibold text-cream">{openFolder.name}</h2>
+              <h2 className="truncate text-base font-semibold text-cream">{openFolder.name}</h2>
             </div>
           )}
 
@@ -230,7 +230,7 @@ export default function DashboardPage() {
           ) : items.length === 0 ? (
             <div className="px-4 py-16 text-center">
               <EmptyIcon className="mx-auto h-14 w-14 text-cream-dim/50" strokeWidth={1.2} aria-hidden />
-              <p className="mt-3 text-sm leading-relaxed text-cream-dim">
+              <p className="mt-3 text-base leading-relaxed text-cream-dim">
                 {empty.lines[0]}
                 <br />
                 {empty.lines[1]}
@@ -257,8 +257,8 @@ export default function DashboardPage() {
         </section>
       </main>
 
-      {/* Neeche: naya script shuru karne ka bar */}
-      <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-xl -translate-x-1/2 bg-gradient-to-t from-plum via-plum/95 to-transparent px-4 pb-4 pt-8">
+      {/* Bottom bar: start a new script */}
+      <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-xl -translate-x-1/2 bg-gradient-to-t from-plum via-plum/95 to-transparent px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-8">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -274,12 +274,12 @@ export default function DashboardPage() {
             value={idea}
             onChange={(e) => setIdea(e.target.value)}
             maxLength={500}
-            placeholder={openFolder ? `Naya script (${openFolder.name})...` : "Naya script shuru karein..."}
-            className="min-w-0 flex-1 bg-transparent px-4 py-2 text-sm text-cream outline-none placeholder:text-cream-dim/70"
+            placeholder={openFolder ? `New script in ${openFolder.name}...` : "Start a new script..."}
+            className="min-w-0 flex-1 bg-transparent px-4 py-3 text-base text-cream outline-none placeholder:text-cream-dim/70"
           />
           <button
             type="submit"
-            className="flex h-9 shrink-0 items-center justify-center rounded-full bg-ember px-5 text-sm font-semibold text-white shadow-glow transition hover:bg-ember-hover"
+            className="flex h-11 shrink-0 items-center justify-center rounded-full bg-ember px-6 text-base font-semibold text-white shadow-glow transition hover:bg-ember-hover"
           >
             Create
           </button>
@@ -293,4 +293,4 @@ export default function DashboardPage() {
       />
     </div>
   );
-    }
+                      }
