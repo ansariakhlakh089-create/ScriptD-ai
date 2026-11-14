@@ -47,7 +47,7 @@ export default function Timeline({ dots, containerRef }: Props) {
   return (
     <nav
       aria-label="Chat timeline"
-      className="no-scrollbar absolute right-0.5 top-1/2 z-10 flex max-h-[70%] -translate-y-1/2 flex-col items-center gap-2"
+      className="no-scrollbar absolute right-0.5 top-1/2 z-10 flex max-h-[70%] -translate-y-1/2 flex-col items-center overflow-y-auto"
     >
       {dots.map((d) => {
         const isActive = active === d.id;
@@ -59,15 +59,15 @@ export default function Timeline({ dots, containerRef }: Props) {
             aria-label={`Go to: ${d.label}`}
             aria-current={isActive ? "true" : undefined}
             onClick={() => jump(d.id)}
-            className="flex h-5 w-6 shrink-0 items-center justify-center"
+            className="flex h-7 w-7 shrink-0 items-center justify-center"
           >
             <span
               className={`block rounded-full transition-all duration-200 ${
                 isActive
-                  ? "h-2.5 w-2.5 bg-ember shadow-glow"
+                  ? "h-3 w-3 bg-ember-soft shadow-glow"
                   : d.role === "user"
-                    ? "h-1.5 w-1.5 bg-ember/60"
-                    : "h-1.5 w-1.5 bg-white/35"
+                    ? "h-2 w-2 bg-ember-soft/60"
+                    : "h-2 w-2 bg-white/40"
               }`}
             />
           </button>
