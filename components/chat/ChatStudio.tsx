@@ -409,5 +409,5 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
       />
     </div>
   );
-      }
-                              
+         }
+    
