@@ -1,7 +1,7 @@
 // FILE: components/chat/ResearchAccordion.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, Globe, LoaderCircle, CheckCircle2, ExternalLink } from "lucide-react";
 import type { SourceItem } from "@/types";
 
@@ -14,6 +14,15 @@ interface Props {
 
 export default function ResearchAccordion({ isWorking, status, notes, sources }: Props) {
   const [isOpen, setIsOpen] = useState(isWorking);
+  const wasWorking = useRef(isWorking);
+
+  // काम पूरा होते ही accordion अपने आप बंद हो जाए
+  useEffect(() => {
+    if (wasWorking.current && !isWorking) setIsOpen(false);
+    wasWorking.current = isWorking;
+  }, [isWorking]);
+
+  const cleanNotes = notes ? notes.replace(/^#{1,4}\s+/gm, "").trim() : null;
 
   const workingText = status === "RESEARCHING" 
     ? "Searching the web..." 
@@ -43,7 +52,7 @@ export default function ResearchAccordion({ isWorking, status, notes, sources }:
 
       {isOpen && (
         <div className="border-t border-white/10 px-4 pb-4 pt-3 text-sm animate-fade-up">
-          {isWorking && !notes ? (
+          {isWorking && !cleanNotes ? (
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-cream-dim">
                 <CheckCircle2 className="h-3 w-3 text-emerald-400" />
@@ -56,11 +65,11 @@ export default function ResearchAccordion({ isWorking, status, notes, sources }:
             </div>
           ) : (
             <div className="space-y-3">
-              {notes && (
+              {cleanNotes && (
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wider text-cream-dim mb-1">Research Notes</p>
-                  <p className="text-xs text-cream-dim leading-relaxed line-clamp-4 hover:line-clamp-none">
-                    {notes}
+                  <p className="max-h-48 overflow-y-auto whitespace-pre-wrap text-xs leading-relaxed text-cream-dim">
+                    {cleanNotes}
                   </p>
                 </div>
               )}
