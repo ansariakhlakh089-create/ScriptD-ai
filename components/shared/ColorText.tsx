@@ -16,7 +16,8 @@ const FACT_RE = /(\b(?:disputed|unverified)\b|\d(?:[\d,.]*\d)?%?|[\u0966-\u096F]
 
 function colorPlain(text: string, keyBase: string): ReactNode[] {
   const clean = text.replace(/==/g, "");
-  return clean.split(QUOTE_RE).flatMap((part, i) => {
+  // Yahan <ReactNode> add kiya gaya hai
+  return clean.split(QUOTE_RE).flatMap<ReactNode>((part, i) => {
     if (i % 2 === 1) {
       return [
         <span key={`${keyBase}-q${i}`} className="text-mist-soft">
@@ -24,7 +25,8 @@ function colorPlain(text: string, keyBase: string): ReactNode[] {
         </span>,
       ];
     }
-    return part.split(FACT_RE).map((seg, j) => {
+    // Yahan bhi <ReactNode> add kiya gaya hai
+    return part.split(FACT_RE).map<ReactNode>((seg, j) => {
       if (j % 2 === 1) {
         const isWord = /^[a-z]/i.test(seg);
         return isWord ? (
@@ -44,7 +46,8 @@ function colorPlain(text: string, keyBase: string): ReactNode[] {
 
 // Inline colouring for any text: ==highlight==, **bold**, `code`, "quotes", numbers
 export function renderRich(text: string): ReactNode[] {
-  return text.split(TOKEN_RE).flatMap((part, i) => {
+  // Line 47 fix: Yahan <ReactNode> add kiya gaya hai
+  return text.split(TOKEN_RE).flatMap<ReactNode>((part, i) => {
     if (i % 2 === 1) {
       if (part.startsWith("==")) {
         return [
