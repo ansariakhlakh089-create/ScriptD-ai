@@ -380,8 +380,9 @@ export function toProjectDTO(p: Project): ProjectDTO {
     isSaved: p.isSaved,
     folderId: p.folderId,
     tokensCharged: p.tokensCharged,
-    apiCostUsd: p.apiCostUsd,
+    apiCostUsd: p.apiCostUsd ?? undefined,
     createdAt: p.createdAt.toISOString(),
     updatedAt: p.updatedAt.toISOString(),
   };
-  }
+    }
+      
