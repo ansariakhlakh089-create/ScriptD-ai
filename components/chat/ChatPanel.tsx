@@ -5,25 +5,13 @@ import { useMemo } from "react";
 import { CircleAlert, LoaderCircle } from "lucide-react";
 import CopyButton from "@/components/shared/CopyButton";
 import ResearchAccordion from "@/components/chat/ResearchAccordion";
+import { renderRich as renderInline } from "@/components/shared/ColorText";
 import type { ProjectDTO, MessageDTO } from "@/types";
 
 export interface ChatDot {
   id: string;
   label: string;
   role: string;
-}
-
-function renderInline(text: string) {
-  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith("**") && part.endsWith("**")) {
-      return <strong key={i} className="font-semibold text-white">{part.slice(2, -2)}</strong>;
-    }
-    if (part.startsWith("`") && part.endsWith("`")) {
-      return <code key={i} className="rounded bg-white/10 px-1 py-0.5 font-mono text-[0.9em] text-ember-soft">{part.slice(1, -1)}</code>;
-    }
-    return <span key={i}>{part}</span>;
-  });
 }
 
 function RichText({ text }: { text: string }) {
