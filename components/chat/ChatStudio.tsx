@@ -83,7 +83,7 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
 
   const dots = useMemo(() => buildDots(project, messages), [project, messages]);
 
-  const hasPaid = !user || (user.tokenBalance > 0 || user.longScriptsLeft > 0 || user.shortScriptsLeft > 0);
+  const hasPaid = Boolean(user && user.tokenBalance > 0);
   const maxWords = user ? (hasPaid ? 400 : user.free.maxWords) : null;
 
   useEffect(() => {
@@ -109,9 +109,11 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
     }
   }, [project?.status, refreshUser]);
 
+  const lastMessageLength = messages[messages.length - 1]?.content.length ?? 0;
+
   useEffect(() => {
-    if (tab === "chat") endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [tab, project?.status, project?.roadmap?.length, messages.length]);
+    if (tab === "chat") endRef.current?.scrollIntoView({ behavior: sending ? "auto" : "smooth", block: "end" });
+  }, [tab, project?.status, project?.roadmap?.length, messages.length, lastMessageLength, sending]);
 
   const handleApiError = useCallback((e: unknown, pending?: string) => {
     if (e instanceof ApiError) {
@@ -185,8 +187,13 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
       });
 
       if (!res.ok) {
-         const err = await res.json();
-         throw new ApiError(res.status, err.code || "ERROR", err.message || "Failed to send message", err);
+        const err = await res.json().catch(() => ({} as Record<string, unknown>));
+        throw new ApiError(
+          res.status,
+          typeof err.code === "string" ? err.code : "ERROR",
+          typeof err.message === "string" ? err.message : "Failed to send message",
+          err
+        );
       }
 
       const reader = res.body?.getReader();
@@ -402,4 +409,5 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
       />
     </div>
   );
-        }
+    }
+                                     
