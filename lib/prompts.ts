@@ -2,6 +2,7 @@
 import type { ChatMsg } from "@/lib/openrouter";
 import type { ScriptLength } from "@/lib/constants";
 import { STEP_LIMITS } from "@/lib/token-calculator";
+import { stripMarks } from "@/lib/script-format";
 
 const LANGUAGE_RULE = `
 "Write in the same language the creator used. If the creator wrote Hindi or Hinglish, write in natural spoken Hindi or Hinglish."
@@ -17,6 +18,9 @@ const LENGTH_SPEC: Record<ScriptLength, string> = {
 };
 
 const NOTES_WORDS: Record<ScriptLength, number> = { SHORT: 300, LONG: 700 };
+
+// How many of the strongest sentences the AI should mark for colour highlighting
+const HIGHLIGHT_COUNT: Record<ScriptLength, string> = { SHORT: "1 to 2", LONG: "4 to 6" };
 
 export interface Brief {
   topic: string;
@@ -62,7 +66,9 @@ export function scriptMessages(b: Brief, researchText: string): ChatMsg[] {
     "You are a senior scriptwriter for YouTube and Instagram creators in India.",
     "Write one complete master script using ONLY the facts in the research. Do not add facts that are not in the research.",
     "If a fact is marked disputed or unverified, either leave it out or say clearly that it is not confirmed.",
-    "The script is voice-over narration only: plain paragraphs, no scene numbers, no camera directions, no markdown, no emojis.",
+    "The script is voice-over narration only: plain paragraphs, no scene numbers, no camera directions, no emojis, and no markdown except the highlight marks described below.",
+    "Separate paragraphs with a blank line.",
+    `Highlight marks: wrap ${HIGHLIGHT_COUNT[b.length]} of the strongest whole sentences (an emotional moment, a surprising fact or the main takeaway) in double equals signs, like ==this sentence==. Never nest marks, never mark part of a sentence, and never use marks in the title, description or tags.`,
     "Open with a strong hook in the first two lines. End with a clear closing line.",
     `Target length: ${LENGTH_SPEC[b.length]}.`,
     "Also write: a roadmap (5 to 8 short steps showing how the script is structured), a catchy title (max 70 characters).",
@@ -103,7 +109,7 @@ export function vpromptMessages(args: {
     ? args.sources.map((s, i) => `${i + 1}. ${s.title} - ${s.url}`).join("\n")
     : "(no verified sources available - do not use SCREENSHOT)";
 
-  const user = `<script>\n${clip(args.script, 14000)}\n</script>\n\n<sources>\n${sourceLines}\n</sources>`;
+  const user = `<script>\n${clip(stripMarks(args.script), 14000)}\n</script>\n\n<sources>\n${sourceLines}\n</sources>`;
 
   return [
     { role: "system", content: system },
@@ -131,7 +137,7 @@ export function followUpMessages(args: {
     "</research>",
     "",
     "<script>",
-    clip(args.script ?? "(none)", 6000),
+    clip(stripMarks(args.script ?? "(none)"), 6000),
     "</script>",
   ].join("\n");
 
@@ -145,4 +151,4 @@ export function followUpMessages(args: {
     ...history,
     { role: "user", content: args.userText },
   ];
-}
+    }
