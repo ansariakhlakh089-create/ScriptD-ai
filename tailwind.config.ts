@@ -11,19 +11,21 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        plum: { DEFAULT: "#080B18", deep: "#04060D", glass: "#191B32" },
-        taupe: { DEFAULT: "#191B32", light: "#232645", deep: "#080B18" },
-        cream: { DEFAULT: "#FFFFFF", dim: "#A995FF" },
-        ember: { DEFAULT: "#7545F5", hover: "#8B62FF", soft: "#A995FF", deep: "#5A32D6" },
-        gold: { DEFAULT: "#E9AE36", hover: "#F0BC52", deep: "#C48B1B" },
+        // Calm, low-glare palette: deep slate-teal surfaces, soft seafoam accent, muted sand highlight.
+        // Pure white is softened on purpose so text never glares on dark backgrounds.
+        white: "#EEF3F4",
+        plum: { DEFAULT: "#0F1A1F", deep: "#0A1317", glass: "#1A2B33" }, // page base
+        taupe: { DEFAULT: "#172830", light: "#20343E", deep: "#0F1A1F" }, // raised surfaces
+        cream: { DEFAULT: "#E8EEF0", dim: "#9FB4BC" }, // text
+        ember: { DEFAULT: "#237A6F", hover: "#2B8F82", soft: "#8FD6CA", deep: "#1A5C54" }, // accent
+        gold: { DEFAULT: "#D4B06A", hover: "#DDBE82", deep: "#B08D4A" }, // highlight
       },
       fontFamily: {
-        // यहाँ नया फॉन्ट जोड़ दिया गया है
         sans: ["var(--font-outfit)", "var(--font-hindi)", "system-ui", "sans-serif"],
       },
       boxShadow: {
-        glow: "0 10px 30px -8px rgba(117, 69, 245, 0.45)",
-        glass: "0 12px 40px -12px rgba(0,0,0,0.6)",
+        glow: "0 10px 30px -8px rgba(35, 122, 111, 0.45)",
+        glass: "0 12px 40px -12px rgba(0, 0, 0, 0.55)",
       },
       keyframes: {
         "fade-up": {
