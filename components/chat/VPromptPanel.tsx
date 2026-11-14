@@ -15,7 +15,7 @@ function copyTextFor(item: VPromptItem): string {
   return [item.instruction ?? "", item.sourceUrl ? `Link: ${item.sourceUrl}` : ""].filter(Boolean).join("\n");
 }
 
-// Saare scenes ek saath copy karne ke liye
+// Copies every scene at once
 export function allPromptsText(items: VPromptItem[]): string {
   return items
     .map((i) => `Scene ${i.id} (${i.kind === "IMAGE" ? "Image prompt" : "Screenshot"})\n${copyTextFor(i)}`)
@@ -39,12 +39,12 @@ export default function VPromptPanel({ project, onToggle }: Props) {
         {(loading || waiting) && <LoaderCircle className="mx-auto h-10 w-10 animate-spin text-ember-soft" aria-hidden />}
         <p className="mt-5 text-base leading-relaxed text-cream-dim">
           {loading
-            ? "Visual prompts ban rahe hain..."
+            ? "Creating your visual prompts..."
             : waiting
-              ? "Script poori hone ke baad yahan har scene ke visual prompts aayenge."
+              ? "Visual prompts for each scene will appear here once your script is ready."
               : project?.status === "ERROR"
-                ? "Visual prompts nahi ban paaye. Chat tab se dobara shuru karo."
-                : "Pehle Chat tab mein apna idea likho. Visual prompts yahan dikhenge."}
+                ? "Visual prompts could not be created. Please start again from the Chat tab."
+                : "Write your idea in the Chat tab first. Your visual prompts will appear here."}
         </p>
       </div>
     );
@@ -57,7 +57,7 @@ export default function VPromptPanel({ project, onToggle }: Props) {
     return (
       <div className="px-6 py-16 text-center">
         <p className="text-base leading-relaxed text-cream-dim">
-          {project.errorMessage ?? "Is script ke liye koi visual prompt nahi bana."}
+          {project.errorMessage ?? "No visual prompts were created for this script."}
         </p>
       </div>
     );
@@ -77,7 +77,7 @@ export default function VPromptPanel({ project, onToggle }: Props) {
           <li key={item.id} className="glass animate-fade-up p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-wide text-ember-soft">
+                <p className="text-sm font-semibold text-ember-soft">
                   Scene {item.id} · {item.kind === "IMAGE" ? "Image prompt" : "Screenshot"}
                 </p>
                 {item.sceneLine && <p className="mt-1.5 text-sm leading-relaxed text-cream-dim">“{item.sceneLine}”</p>}
@@ -85,7 +85,7 @@ export default function VPromptPanel({ project, onToggle }: Props) {
               <CopyButton text={copyTextFor(item)} ariaLabel={`Copy scene ${item.id}`} />
             </div>
 
-            <div className="mt-3 whitespace-pre-wrap rounded-xl border border-white/20 bg-black/15 p-3 text-sm leading-relaxed text-cream">
+            <div className="mt-3 whitespace-pre-wrap rounded-xl border border-white/20 bg-black/15 p-3 text-base leading-relaxed text-cream">
               {item.kind === "IMAGE" ? item.prompt : item.instruction}
             </div>
 
@@ -101,7 +101,7 @@ export default function VPromptPanel({ project, onToggle }: Props) {
                   <span className="truncate">Open source · {hostOf(item.sourceUrl)}</span>
                 </a>
               ) : (
-                <p className="mt-3 text-xs leading-relaxed text-cream-dim">
+                <p className="mt-3 text-sm leading-relaxed text-cream-dim">
                   No verified link for this one. Search for it yourself before using it.
                 </p>
               ))}
@@ -111,7 +111,7 @@ export default function VPromptPanel({ project, onToggle }: Props) {
               role="checkbox"
               aria-checked={item.done}
               onClick={() => onToggle(item.id, !item.done)}
-              className="mt-4 flex items-center gap-3 text-sm font-medium text-cream"
+              className="mt-4 flex min-h-11 items-center gap-3 text-base font-medium text-cream"
             >
               <span
                 className={`flex h-6 w-6 items-center justify-center rounded-md border-2 transition ${
