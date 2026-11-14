@@ -81,7 +81,7 @@ export default function PlansModal({ open, onClose, onPurchased, message }: Prop
         description: order.label,
         order_id: order.orderId,
         prefill: order.prefill,
-        theme: { color: "#237A6F" },
+        theme: { color: "#F43F5E" }, // Updated to Rose/Red button color
         handler: async (resp: RazorpaySuccess) => {
           try {
             await api("/api/checkout", {
@@ -218,4 +218,4 @@ export default function PlansModal({ open, onClose, onPurchased, message }: Prop
       </div>
     </div>
   );
-                                                                                                  }
+}
