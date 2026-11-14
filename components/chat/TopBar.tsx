@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { EllipsisVertical, FolderInput, Trash2 } from "lucide-react";
+import { ClipboardCopy, Copy, EllipsisVertical, FolderInput, Trash2 } from "lucide-react";
 import type { FolderDTO } from "@/types";
 
 interface Props {
@@ -17,6 +17,8 @@ interface Props {
   onDelete: () => Promise<void>;
 }
 
+// A compact "more options" button with its menu. It lives inside the tab row in ChatStudio,
+// so the screen no longer needs a second bar at the top.
 export default function TopBar(props: Props) {
   const { hasProject, folders, currentFolderId } = props;
   const [open, setOpen] = useState(false);
@@ -38,38 +40,51 @@ export default function TopBar(props: Props) {
     }
   }
 
-  return (
-    <header className="relative flex items-center justify-between gap-2 border-b border-white/5 px-3 py-2">
-      {/* यहाँ से 'ScriptD AI' हटा दिया गया है, और खाली जगह (flex-1) दे दी है ताकि मेनू दाईं तरफ चला जाए */}
-      <div className="flex-1"></div>
+  if (!hasProject) return null;
 
-      <div className="flex items-center gap-1">
-        {hasProject && (
-          <button
-            type="button"
-            onClick={() => (open ? close() : setOpen(true))}
-            aria-label="More options"
-            aria-expanded={open}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-cream hover:bg-white/10"
-          >
-            <EllipsisVertical className="h-4 w-4" aria-hidden />
-          </button>
-        )}
-      </div>
+  return (
+    <div className="relative shrink-0">
+      <button
+        type="button"
+        onClick={() => (open ? close() : setOpen(true))}
+        aria-label="More options"
+        aria-expanded={open}
+        className="flex h-10 w-10 items-center justify-center rounded-full text-cream hover:bg-white/10"
+      >
+        <EllipsisVertical className="h-5 w-5" aria-hidden />
+      </button>
 
       {open && (
         <>
           <button type="button" aria-label="Close menu" onClick={close} className="fixed inset-0 z-30 cursor-default" />
-          <div className="absolute right-3 top-11 z-40 w-64 rounded-2xl border border-white/10 bg-taupe p-2 shadow-2xl animate-fade-up">
+          <div className="absolute right-0 top-12 z-40 w-64 rounded-2xl border border-white/10 bg-taupe p-2 shadow-2xl animate-fade-up">
             {view === "main" ? (
               <>
                 <MenuItem
-                  icon={<FolderInput className="h-4 w-4" aria-hidden />}
+                  icon={<Copy className="h-5 w-5" aria-hidden />}
+                  label="Copy script"
+                  disabled={!props.canCopyScript}
+                  onClick={() => {
+                    props.onCopyScript();
+                    close();
+                  }}
+                />
+                <MenuItem
+                  icon={<ClipboardCopy className="h-5 w-5" aria-hidden />}
+                  label="Copy visual prompts"
+                  disabled={!props.canCopyPrompts}
+                  onClick={() => {
+                    props.onCopyPrompts();
+                    close();
+                  }}
+                />
+                <MenuItem
+                  icon={<FolderInput className="h-5 w-5" aria-hidden />}
                   label="Move to project"
                   onClick={() => setView("move")}
                 />
                 <MenuItem
-                  icon={<Trash2 className="h-4 w-4" aria-hidden />}
+                  icon={<Trash2 className="h-5 w-5" aria-hidden />}
                   label="Delete"
                   danger
                   disabled={busy}
@@ -78,9 +93,9 @@ export default function TopBar(props: Props) {
               </>
             ) : (
               <>
-                <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-cream-dim">Move to</p>
+                <p className="px-3 pb-1 pt-2 text-sm font-semibold text-cream-dim">Move to</p>
                 {folders.length === 0 ? (
-                  <p className="px-3 py-2 text-sm text-cream-dim">No projects yet.</p>
+                  <p className="px-3 py-2 text-base text-cream-dim">No projects yet.</p>
                 ) : (
                   folders.map((f) => (
                     <MenuItem
@@ -101,7 +116,7 @@ export default function TopBar(props: Props) {
           </div>
         </>
       )}
-    </header>
+    </div>
   );
 }
 
@@ -118,8 +133,8 @@ function MenuItem(props: {
       type="button"
       onClick={props.onClick}
       disabled={props.disabled}
-      className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition hover:bg-white/5 ${
-        props.danger ? "text-red-400" : "text-cream"
+      className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-base transition hover:bg-white/5 disabled:pointer-events-none disabled:opacity-40 ${
+        props.danger ? "text-red-300" : "text-cream"
       }`}
     >
       {props.icon}
