@@ -83,6 +83,9 @@ export async function POST(req: Request) {
       .reverse()
       .map((m) => ({ role: m.role === "ASSISTANT" ? ("ASSISTANT" as const) : ("USER" as const), content: m.content }));
 
+    const encoder = new TextEncoder();
+    let clientGone = false;
+
     const stream = new ReadableStream({
       async start(controller) {
         try {
@@ -92,34 +95,49 @@ export async function POST(req: Request) {
               messages: followUpMessages({ roadmap: project.roadmap, script: project.script, history, userText: message }),
               maxTokens: 900,
               temperature: 0.7,
+              timeoutMs: 50_000, // maxDuration 60 सेकंड है, इसलिए इससे कम रखा है
             },
             (chunk) => {
-              controller.enqueue(new TextEncoder().encode(chunk));
+              if (clientGone) return;
+              try {
+                controller.enqueue(encoder.encode(chunk));
+              } catch {
+                clientGone = true; // यूज़र बीच में बाहर निकल गया
+              }
             }
           );
 
           const charge = chargeFor(result.promptTokens, result.completionTokens);
 
+          // यूज़र चला भी गया हो तब भी जवाब सेव होगा और टोकन कटेंगे
           await db.message.create({ data: { projectId: project.id, role: "USER", content: message } });
           await db.message.create({
             data: { projectId: project.id, role: "ASSISTANT", content: result.text.trim(), tokens: charge },
           });
-
           await spendFollowUp({ userId: user.id, funding, charge, projectId: project.id });
-          
-          controller.close();
+
+          if (!clientGone) controller.close();
         } catch (e) {
           console.error("Stream error", e);
-          controller.error(e);
+          if (!clientGone) {
+            try {
+              controller.error(e);
+            } catch {
+              // stream पहले ही बंद है
+            }
+          }
         }
+      },
+      cancel() {
+        clientGone = true;
       },
     });
 
     return new Response(stream, {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
+        "Cache-Control": "no-cache, no-transform",
+        "X-Accel-Buffering": "no",
       },
     });
 
