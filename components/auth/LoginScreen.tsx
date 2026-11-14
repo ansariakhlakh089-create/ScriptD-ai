@@ -12,7 +12,7 @@ const HIGHLIGHT_START = TYPED_LINE.indexOf(HIGHLIGHT_WORDS);
 const HIGHLIGHT_END = HIGHLIGHT_START + HIGHLIGHT_WORDS.length;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Upar uthte chhote chamakdaar kan
+// Small glowing particles rising upward
 const SPARKS = [
   { left: "8%", delay: "0s", duration: "9s" },
   { left: "22%", delay: "3s", duration: "11s" },
@@ -22,7 +22,7 @@ const SPARKS = [
   { left: "88%", delay: "2s", duration: "9.5s" },
 ];
 
-// Typewriter: akshar ek-ek karke likhta hai
+// Typewriter effect: types the text one character at a time
 function useTypewriter(text: string, speedMs = 55) {
   const [count, setCount] = useState(0);
 
@@ -39,7 +39,7 @@ function useTypewriter(text: string, speedMs = 55) {
   return { shown: text.slice(0, count), done: count >= text.length };
 }
 
-// "Content Creation" shabd ko alag rang mein dikhata hai
+// Shows the words "Content Creation" in a highlight colour
 function TypedText({ shown }: { shown: string }) {
   const before = shown.slice(0, HIGHLIGHT_START);
   const middle = shown.slice(HIGHLIGHT_START, HIGHLIGHT_END);
@@ -47,7 +47,7 @@ function TypedText({ shown }: { shown: string }) {
   return (
     <>
       {before}
-      {middle && <span className="text-[#ffb999]">{middle}</span>}
+      {middle && <span className="text-ember-soft">{middle}</span>}
       {after}
     </>
   );
@@ -108,7 +108,7 @@ export default function LoginScreen({ next }: { next: string }) {
       setBusy(null);
       return;
     }
-    window.location.href = next; // poora reload, taaki session cookie pakki ho jaye
+    window.location.href = next; // full page reload so the session cookie is sure to be applied
   }
 
   function handleOtpChange(value: string) {
@@ -119,7 +119,7 @@ export default function LoginScreen({ next }: { next: string }) {
 
   return (
     <main className="auth-bg relative min-h-dvh overflow-hidden">
-      {/* Peeche ki jaadui chamak aur kan */}
+      {/* Background glow and particles */}
       <div className="aurora" aria-hidden>
         <span className="orb orb-1" />
         <span className="orb orb-2" />
@@ -134,13 +134,13 @@ export default function LoginScreen({ next }: { next: string }) {
       </div>
 
       <div className="relative z-10 mx-auto flex min-h-dvh w-full max-w-md flex-col items-center justify-between px-6 pb-10 pt-12">
-        {/* Upar: naam + tagline */}
+        {/* Top: name and tagline */}
         <header className="animate-fade-up text-center">
           <h1 className="title-glow text-3xl font-bold uppercase tracking-[0.18em] text-cream">{APP_NAME}</h1>
           <p className="mt-3 text-base tracking-wide text-cream-dim">{APP_TAGLINE}</p>
         </header>
 
-        {/* Beech mein: chamakta shishe wala card */}
+        {/* Middle: glowing glass card */}
         <div className="animate-fade-up w-full" style={{ animationDelay: "120ms" }}>
           <section
             className="glass-card-live glow-ring float-slow flex w-full flex-col items-center px-6 py-10 text-center"
@@ -151,13 +151,13 @@ export default function LoginScreen({ next }: { next: string }) {
             <p className="mt-8 min-h-[3.5rem] text-lg font-semibold leading-snug text-cream" aria-live="polite">
               <TypedText shown={typed.shown} />
               {!typed.done && (
-                <span className="ml-0.5 inline-block h-5 w-2 translate-y-0.5 animate-blink bg-[#ffb999]" />
+                <span className="ml-0.5 inline-block h-5 w-2 translate-y-0.5 animate-blink bg-ember-soft" />
               )}
             </p>
           </section>
         </div>
 
-        {/* Neeche: login ke tareeke */}
+        {/* Bottom: ways to log in */}
         <section className="w-full animate-fade-up" style={{ animationDelay: "240ms" }}>
           {step === "start" ? (
             <>
@@ -177,7 +177,7 @@ export default function LoginScreen({ next }: { next: string }) {
                 Continue with Google
               </button>
 
-              <div className="my-5 flex items-center gap-4 text-sm text-cream-dim">
+              <div className="my-5 flex items-center gap-4 text-base text-cream-dim">
                 <span className="h-px flex-1 bg-white/30" />
                 or
                 <span className="h-px flex-1 bg-white/30" />
@@ -221,7 +221,7 @@ export default function LoginScreen({ next }: { next: string }) {
             </>
           ) : (
             <div className="text-center">
-              <p className="text-sm text-cream-dim">
+              <p className="text-base text-cream-dim">
                 We sent a 6-digit code to <span className="font-semibold text-cream">{cleanEmail}</span>
               </p>
               <label htmlFor="otp" className="sr-only">
@@ -240,14 +240,14 @@ export default function LoginScreen({ next }: { next: string }) {
                 disabled={busy === "otp"}
                 className="field mt-4 text-center text-2xl font-semibold tracking-[0.5em]"
               />
-              <div className="mt-4 flex items-center justify-center gap-5 text-sm">
+              <div className="mt-4 flex items-center justify-center gap-3 text-base">
                 <button
                   type="button"
                   onClick={() => {
                     setStep("start");
                     setError(null);
                   }}
-                  className="text-cream-dim underline-offset-4 hover:underline"
+                  className="min-h-11 px-3 text-cream-dim underline-offset-4 hover:underline"
                 >
                   Change email
                 </button>
@@ -255,13 +255,13 @@ export default function LoginScreen({ next }: { next: string }) {
                   type="button"
                   onClick={() => void sendCode()}
                   disabled={cooldown > 0 || busy !== null}
-                  className="text-ember-soft underline-offset-4 hover:underline disabled:text-cream-dim/60 disabled:no-underline"
+                  className="min-h-11 px-3 text-ember-soft underline-offset-4 hover:underline disabled:text-cream-dim/60 disabled:no-underline"
                 >
                   {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
                 </button>
               </div>
               {busy === "otp" && (
-                <p className="mt-3 flex items-center justify-center gap-2 text-sm text-cream-dim">
+                <p className="mt-3 flex items-center justify-center gap-2 text-base text-cream-dim">
                   <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> Checking...
                 </p>
               )}
@@ -269,7 +269,7 @@ export default function LoginScreen({ next }: { next: string }) {
           )}
 
           {error && (
-            <p role="alert" className="mt-4 rounded-2xl bg-red-950/40 px-4 py-2.5 text-center text-sm text-red-100">
+            <p role="alert" className="mt-4 rounded-2xl bg-red-950/40 px-4 py-3 text-center text-base text-red-100">
               {error}
             </p>
           )}
@@ -277,4 +277,4 @@ export default function LoginScreen({ next }: { next: string }) {
       </div>
     </main>
   );
-                }
+}
