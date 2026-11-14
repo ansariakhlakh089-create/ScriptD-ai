@@ -18,6 +18,6 @@ export default async function ChatPage({
   const idea = (first(params.idea) ?? "").slice(0, 500);
   const folder = first(params.folder)?.slice(0, 64) ?? null;
 
-  // key badalne par poora screen naye sire se shuru hota hai (alag chat kholne par)
+  // When the key changes the whole screen starts fresh (for example when a different chat is opened)
   return <ChatStudio key={id ?? `new-${folder ?? ""}`} initialId={id} initialIdea={idea} initialFolderId={folder} />;
 }
