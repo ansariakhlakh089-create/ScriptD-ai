@@ -72,7 +72,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#0F1A1F",
+  themeColor: "#0A0F1D", // Updated to Dark Navy
 };
 
 // 5. Root HTML structure
@@ -84,4 +84,4 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </body>
     </html>
   );
-}
+                        }
