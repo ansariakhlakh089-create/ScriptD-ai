@@ -97,7 +97,6 @@ function collectCitations(data: Record<string, unknown>, message: Record<string,
     for (const a of annotations) {
       const c = (a as { type?: string; url_citation?: { url?: string; title?: string } })?.url_citation;
       if ((a as { type?: string })?.type === "url_citation" && c?.url) {
-        // यहाँ फिक्स किया गया है: c.title || c.url
         found.push({ url: c.url, title: c.title || c.url });
       }
     }
@@ -133,14 +132,14 @@ export async function callModel(opts: CallOptions): Promise<ModelResult> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new AIError("NO_API_KEY", "OPENROUTER_API_KEY is empty");
 
-  // Perplexity Sonar models में web search पहले से built-in है, इसलिए ":online" नहीं जोड़ना
+  // Perplexity Sonar models already search the web, so no ":online" suffix is added
   const model = opts.model;
 
   let useJson = Boolean(opts.json);
   let lastError: AIError | null = null;
   let skipSleep = false;
 
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < 2; attempt++) {
     if (attempt > 0 && !skipSleep) await sleep(1500 * attempt);
     skipSleep = false;
 
@@ -205,7 +204,7 @@ export async function callModel(opts: CallOptions): Promise<ModelResult> {
       };
     } catch (err) {
       if (err instanceof AIError) {
-        // जो error दोबारा कोशिश करने लायक नहीं है उसे तुरंत फेंको, बाकी पर retry होगा
+        // Errors that cannot be retried are thrown immediately; the rest go around the loop again
         if (!err.retryable) throw err;
         lastError = err;
       } else if (err instanceof Error && err.name === "AbortError") {
@@ -225,7 +224,7 @@ export async function callModelStream(opts: CallOptions, onChunk: (text: string)
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new AIError("NO_API_KEY", "OPENROUTER_API_KEY is empty");
 
-  // Perplexity Sonar models में web search पहले से built-in है, इसलिए ":online" नहीं जोड़ना
+  // Perplexity Sonar models already search the web, so no ":online" suffix is added
   const model = opts.model;
 
   const controller = new AbortController();
@@ -295,7 +294,7 @@ export async function callModelStream(opts: CallOptions, onChunk: (text: string)
               usage = json.usage;
             }
           } catch {
-            // अधूरे chunk का JSON parse error छोड़ दो
+            // Ignore JSON parse errors from partial chunks
           }
         }
       }
@@ -333,5 +332,5 @@ export function extractJson(text: string): unknown {
   } catch {
     throw new AIError("BAD_JSON", "Reply was not valid JSON");
   }
-    }
-      
+          }
+    
