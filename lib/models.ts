@@ -1,15 +1,23 @@
-// lib/models.ts
+// FILE: lib/models.ts
 export type PlanType = "FREE" | "PAID";
 export type TaskType = "RESEARCH" | "SCRIPT" | "VPROMPT" | "QUALITY_CHECK" | "CHAT";
 
+// हर model का नाम Vercel के Environment Variables से बदला जा सकता है (कोड बदले बिना)।
+// नाम हमेशा https://openrouter.ai/models पर देखकर कॉपी करें।
+function pick(envName: string, fallback: string): string {
+  const v = process.env[envName]?.trim();
+  return v ? v : fallback;
+}
+
 export const MODELS = {
-  PERPLEXITY_SEARCH: "perplexity/llama-3.1-sonar-small-128k-online",
-  PERPLEXITY_AGENT: "perplexity/llama-3.1-sonar-large-128k-online",
-  GROQ_FAST: "groq/llama-3.1-70b-versatile",
-  CLAUDE_SONNET: "anthropic/claude-3.5-sonnet",
-  GEMINI_FLASH: "google/gemini-1.5-flash",
-  GROK_VISION: "x-ai/grok-2-vision",
-  BACKUP_MODEL: "openai/gpt-4o-mini"
+  // Perplexity के पुराने llama-3.1-sonar-* models फरवरी 2025 में बंद हो चुके हैं
+  PERPLEXITY_SEARCH: pick("MODEL_RESEARCH_FREE", "perplexity/sonar"),
+  PERPLEXITY_AGENT: pick("MODEL_RESEARCH_PAID", "perplexity/sonar-pro"),
+  // नीचे वाले नाम पुराने पड़ सकते हैं - OpenRouter पर जाँचकर env से बदल दें
+  FAST: pick("MODEL_FAST", "meta-llama/llama-3.3-70b-instruct"),
+  FLASH: pick("MODEL_FLASH", "google/gemini-2.0-flash-001"),
+  PREMIUM: pick("MODEL_PREMIUM", "anthropic/claude-sonnet-4"),
+  BACKUP_MODEL: pick("MODEL_BACKUP", "openai/gpt-4o-mini"),
 };
 
 export const getModelForTask = (task: TaskType, plan: PlanType) => {
@@ -19,44 +27,41 @@ export const getModelForTask = (task: TaskType, plan: PlanType) => {
       PAID: { primary: MODELS.PERPLEXITY_AGENT, backup: MODELS.BACKUP_MODEL, allowWebLinks: true },
     },
     SCRIPT: {
-      FREE: { primary: MODELS.GROQ_FAST, backup: MODELS.GEMINI_FLASH, allowWebLinks: false },
-      PAID: { primary: MODELS.CLAUDE_SONNET, backup: MODELS.BACKUP_MODEL, allowWebLinks: false },
+      FREE: { primary: MODELS.FAST, backup: MODELS.FLASH, allowWebLinks: false },
+      PAID: { primary: MODELS.PREMIUM, backup: MODELS.BACKUP_MODEL, allowWebLinks: false },
     },
+    // Visual prompts सिर्फ text से बनते हैं, इसलिए vision model की ज़रूरत नहीं
     VPROMPT: {
-      FREE: { primary: MODELS.GEMINI_FLASH, backup: MODELS.GROQ_FAST, allowWebLinks: false },
-      PAID: { primary: MODELS.GROK_VISION, backup: MODELS.CLAUDE_SONNET, allowWebLinks: false },
+      FREE: { primary: MODELS.FLASH, backup: MODELS.FAST, allowWebLinks: false },
+      PAID: { primary: MODELS.FLASH, backup: MODELS.PREMIUM, allowWebLinks: false },
     },
     QUALITY_CHECK: {
-      FREE: { primary: MODELS.GROQ_FAST, backup: MODELS.GEMINI_FLASH, allowWebLinks: false },
-      PAID: { primary: MODELS.CLAUDE_SONNET, backup: MODELS.BACKUP_MODEL, allowWebLinks: false },
+      FREE: { primary: MODELS.FAST, backup: MODELS.FLASH, allowWebLinks: false },
+      PAID: { primary: MODELS.PREMIUM, backup: MODELS.BACKUP_MODEL, allowWebLinks: false },
     },
     CHAT: {
-      FREE: { primary: MODELS.GROQ_FAST, backup: MODELS.GEMINI_FLASH, allowWebLinks: false },
-      PAID: { primary: MODELS.CLAUDE_SONNET, backup: MODELS.BACKUP_MODEL, allowWebLinks: false },
-    }
+      FREE: { primary: MODELS.FAST, backup: MODELS.FLASH, allowWebLinks: false },
+      PAID: { primary: MODELS.PREMIUM, backup: MODELS.BACKUP_MODEL, allowWebLinks: false },
+    },
   };
   return registry[task][plan];
 };
 
-// =========================================================================
-// 🔥 VERCEL BUILD FIXES (Yahan se changes shuru hain)
-// =========================================================================
-
-// 1. 'missingAIVars' export kiya kyunki generate/route.ts ise maang raha tha
-// Isme array return karna zaroori hai kyunki route.ts mein 'missing.length' check hota hai
-export const missingAIVars = (tier: any): string[] => {
-  return []; // Abhi ke liye khali array taaki build pass ho jaye. Baad mein isme apna logic daal sakte ho.
+// generate/route.ts इसे इस्तेमाल करता है: जो ज़रूरी environment variable गायब हो उसका नाम लौटाता है
+export const missingAIVars = (_tier?: unknown): string[] => {
+  const missing: string[] = [];
+  if (!process.env.OPENROUTER_API_KEY) missing.push("OPENROUTER_API_KEY");
+  return missing;
 };
 
-// 2. 'missingApiVers' bhi export karke rakh diya taaki koi aur file error na de
 export const missingApiVers = () => {
-  return ""; 
+  return "";
 };
 
-// 3. 'getModel' export kiya taaki chat/route.ts aur pipeline.ts kaam kar sakein
-export const getModel = getModelForTask; 
+// chat/route.ts और pipeline.ts इसे इस्तेमाल करते हैं
+export const getModel = getModelForTask;
 
 export const estimateTaskCost = (task: TaskType, plan: PlanType, inputLength: number): number => {
-  const baseCost = plan === "PAID" ? 5 : 1; 
-  return baseCost + (inputLength * 0.001); 
+  const baseCost = plan === "PAID" ? 5 : 1;
+  return baseCost + inputLength * 0.001;
 };
