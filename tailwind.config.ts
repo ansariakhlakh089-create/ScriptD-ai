@@ -11,22 +11,21 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Calm, low-glare palette: deep slate-teal surfaces, soft seafoam accent, muted sand highlight.
-        // Pure white is softened on purpose so text never glares on dark backgrounds.
-        white: "#EEF3F4",
-        plum: { DEFAULT: "#0F1A1F", deep: "#0A1317", glass: "#1A2B33" }, // page base
-        taupe: { DEFAULT: "#172830", light: "#20343E", deep: "#0F1A1F" }, // raised surfaces
-        cream: { DEFAULT: "#E8EEF0", dim: "#9FB4BC" }, // text
-        ember: { DEFAULT: "#237A6F", hover: "#2B8F82", soft: "#8FD6CA", deep: "#1A5C54" }, // accent
-        gold: { DEFAULT: "#D4B06A", hover: "#DDBE82", deep: "#B08D4A" }, // highlight
-        blush: { DEFAULT: "#E8A29B", soft: "#F2C1BB", deep: "#C97B73" }, // emotional lines
-        mist: { DEFAULT: "#8DB9E8", soft: "#B5D3F2", deep: "#5F93C9" }, // quotes, links, camera terms
+        // New Navy & Crimson/Rose Palette
+        white: "#F8FAFC",
+        plum: { DEFAULT: "#0A0F1D", deep: "#050812", glass: "#1A2333" }, // Overall App Background (Image 1)
+        taupe: { DEFAULT: "#111827", light: "#1F2937", deep: "#0A0F1D" }, // Raised surfaces
+        cream: { DEFAULT: "#F8FAFC", dim: "#94A3B8" }, // Text
+        ember: { DEFAULT: "#F43F5E", hover: "#FB7185", soft: "#FDA4AF", deep: "#E11D48" }, // Button & Accent Color (Image 2 Stroke)
+        gold: { DEFAULT: "#F59E0B", hover: "#FBBF24", deep: "#B45309" }, // Highlight
+        blush: { DEFAULT: "#FDA4AF", soft: "#FECDD3", deep: "#F43F5E" }, // Emotional lines
+        mist: { DEFAULT: "#38BDF8", soft: "#7DD3FC", deep: "#0284C7" }, // Quotes, links, camera terms
       },
       fontFamily: {
         sans: ["var(--font-outfit)", "var(--font-hindi)", "system-ui", "sans-serif"],
       },
       boxShadow: {
-        glow: "0 10px 30px -8px rgba(35, 122, 111, 0.45)",
+        glow: "0 10px 30px -8px rgba(244, 63, 94, 0.45)", // Changed to Rose glow
         glass: "0 12px 40px -12px rgba(0, 0, 0, 0.55)",
       },
       keyframes: {
