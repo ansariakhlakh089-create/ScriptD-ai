@@ -64,7 +64,7 @@ export function previewFunding(user: AppUser, length: ScriptLength): Funding {
   return credit > 0 ? "PAID" : "FREE";
 }
 
-export async function reserveRun(user: AppUser, length: ScriptLength): Promise<Funding> {
+export async function reserveRun(user: AppUser, length: ScriptLength, projectId?: string): Promise<Funding> {
   const needed = estimateRunTokens(length);
   const label = length === "LONG" ? "long" : "short";
 
@@ -92,7 +92,7 @@ export async function reserveRun(user: AppUser, length: ScriptLength): Promise<F
     if (result.count !== 1) throw new LimitError("BUSY", 409, "Please try again in a moment.");
 
     await db.tokenLedger.create({
-      data: { userId: user.id, delta: -needed, reason: "RESERVE", meta: { source: "PAID", length } }
+      data: { userId: user.id, projectId, delta: -needed, reason: "RESERVE", meta: { source: "PAID", length } }
     });
 
     return "PAID";
@@ -146,7 +146,7 @@ export async function reserveRun(user: AppUser, length: ScriptLength): Promise<F
   if (result.count !== 1) throw new LimitError("BUSY", 409, "Please try again in a moment.");
 
   await db.tokenLedger.create({
-    data: { userId: user.id, delta: -needed, reason: "RESERVE", meta: { source: "FREE", length } }
+    data: { userId: user.id, projectId, delta: -needed, reason: "RESERVE", meta: { source: "FREE", length } }
   });
 
   return "FREE";
@@ -328,4 +328,5 @@ export function buildUserSummary(user: AppUser): UserSummary {
       resetsAt: windowEnd(user).toISOString(),
     },
   };
-}
+                 }
+  
