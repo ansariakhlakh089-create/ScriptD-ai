@@ -133,10 +133,8 @@ export async function callModel(opts: CallOptions): Promise<ModelResult> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new AIError("NO_API_KEY", "OPENROUTER_API_KEY is empty");
 
-  let model = opts.model;
-  if (opts.webSearch && model.startsWith("perplexity/") && !model.endsWith(":online")) {
-    model = `${model}:online`;
-  }
+  // Perplexity Sonar models में web search पहले से built-in है, इसलिए ":online" नहीं जोड़ना
+  const model = opts.model;
 
   let useJson = Boolean(opts.json);
   let lastError: AIError | null = null;
@@ -207,7 +205,8 @@ export async function callModel(opts: CallOptions): Promise<ModelResult> {
       };
     } catch (err) {
       if (err instanceof AIError) {
-        if (err.retryable) throw err;
+        // जो error दोबारा कोशिश करने लायक नहीं है उसे तुरंत फेंको, बाकी पर retry होगा
+        if (!err.retryable) throw err;
         lastError = err;
       } else if (err instanceof Error && err.name === "AbortError") {
         lastError = new AIError("TIMEOUT", "Model timed out", true);
@@ -226,10 +225,8 @@ export async function callModelStream(opts: CallOptions, onChunk: (text: string)
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new AIError("NO_API_KEY", "OPENROUTER_API_KEY is empty");
 
-  let model = opts.model;
-  if (opts.webSearch && model.startsWith("perplexity/") && !model.endsWith(":online")) {
-    model = `${model}:online`;
-  }
+  // Perplexity Sonar models में web search पहले से built-in है, इसलिए ":online" नहीं जोड़ना
+  const model = opts.model;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 110_000);
@@ -251,6 +248,7 @@ export async function callModelStream(opts: CallOptions, onChunk: (text: string)
         temperature: opts.temperature ?? 0.7,
         stream: true,
         stream_options: { include_usage: true },
+        usage: { include: true },
         ...(opts.json ? { response_format: { type: "json_object" } } : {}),
       }),
     });
@@ -269,6 +267,7 @@ export async function callModelStream(opts: CallOptions, onChunk: (text: string)
     const decoder = new TextDecoder();
     let fullText = "";
     let usage = { prompt_tokens: 0, completion_tokens: 0, cost: 0 };
+    let finishReason: string | null = null;
     let buffer = "";
 
     while (true) {
@@ -286,6 +285,8 @@ export async function callModelStream(opts: CallOptions, onChunk: (text: string)
           try {
             const json = JSON.parse(trimmed.slice(6));
             const delta = json.choices?.[0]?.delta?.content || "";
+            const fr = json.choices?.[0]?.finish_reason;
+            if (typeof fr === "string") finishReason = fr;
             if (delta) {
               fullText += delta;
               onChunk(delta);
@@ -293,8 +294,8 @@ export async function callModelStream(opts: CallOptions, onChunk: (text: string)
             if (json.usage) {
               usage = json.usage;
             }
-          } catch (e) {
-            // ignore JSON parse errors for partial chunks
+          } catch {
+            // अधूरे chunk का JSON parse error छोड़ दो
           }
         }
       }
@@ -308,7 +309,7 @@ export async function callModelStream(opts: CallOptions, onChunk: (text: string)
       completionTokens: Number(usage.completion_tokens ?? 0),
       costUsd: Number(usage.cost ?? 0),
       citations: [],
-      finishReason: "stop",
+      finishReason: finishReason ?? "stop",
       model,
     };
   } catch (err) {
@@ -332,4 +333,5 @@ export function extractJson(text: string): unknown {
   } catch {
     throw new AIError("BAD_JSON", "Reply was not valid JSON");
   }
-        }
+    }
+      
