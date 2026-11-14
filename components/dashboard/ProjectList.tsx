@@ -69,7 +69,7 @@ function Row({ item, folders, onMove, onDelete }: { item: ProjectListItem } & Om
       <div className="flex items-center gap-2 p-3">
         <Link href={`/chat?id=${item.id}`} className="min-w-0 flex-1 rounded-xl p-1">
           <p className="truncate text-base font-semibold text-cream">{item.title || item.topic || "Untitled"}</p>
-          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-cream-dim">
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-cream-dim">
             <StatusBadge status={item.status} />
             {item.genre && <span>{item.genre}</span>}
             <span>{item.length === "LONG" ? "Long" : "Short"}</span>
@@ -99,10 +99,10 @@ function Row({ item, folders, onMove, onDelete }: { item: ProjectListItem } & Om
 
       {moveOpen && (
         <div className="border-t border-white/15 bg-black/10 p-3">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-cream-dim">Move to project</p>
+          <p className="mb-2 text-sm font-semibold text-cream-dim">Move to project</p>
           {folders.length === 0 ? (
             <p className="text-sm text-cream-dim">
-              You have no projects yet. Open the &quot;Your Projects&quot; tab and create one first.
+              You have no projects yet. Open the &quot;Projects&quot; tab and create one first.
             </p>
           ) : (
             <div className="flex flex-wrap gap-2">
