@@ -14,7 +14,7 @@ interface Props {
   onNew: () => void;
 }
 
-// Side menu (≡): purani chats ki jhalak + naya chat
+// Side menu (≡): a quick list of past chats plus a New chat button
 export default function ChatsDrawer({ open, onClose, currentId, onNew }: Props) {
   const [items, setItems] = useState<ProjectListItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -57,7 +57,7 @@ export default function ChatsDrawer({ open, onClose, currentId, onNew }: Props) 
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
           >
             <X className="h-5 w-5" aria-hidden />
           </button>
@@ -82,13 +82,13 @@ export default function ChatsDrawer({ open, onClose, currentId, onNew }: Props) 
               <LoaderCircle className="h-5 w-5 animate-spin text-cream-dim" aria-label="Loading" />
             </li>
           )}
-          {!loading && items.length === 0 && <li className="px-3 py-6 text-sm text-cream-dim">No chats yet.</li>}
+          {!loading && items.length === 0 && <li className="px-3 py-6 text-base text-cream-dim">No chats yet.</li>}
           {items.map((item) => (
             <li key={item.id}>
               <Link
                 href={`/chat?id=${item.id}`}
                 onClick={onClose}
-                className={`block truncate rounded-xl px-3 py-3 text-sm transition hover:bg-white/10 ${
+                className={`block truncate rounded-xl px-3 py-3.5 text-base transition hover:bg-white/10 ${
                   item.id === currentId ? "bg-white/15 font-semibold text-white" : "text-cream"
                 }`}
               >
