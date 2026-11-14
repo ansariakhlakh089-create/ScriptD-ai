@@ -1,5 +1,5 @@
 // FILE: app/api/generate/route.ts
-// Naya project shuru: idea + type + tone + length. Research -> Script -> Visual prompts background mein chalta hai.
+// Start a new project: idea + type + tone + length. Research -> Script -> Visual prompts run in the background.
 import { after } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -20,14 +20,14 @@ import { FREE_LIMITS } from "@/lib/constants";
 import { runPipeline } from "@/lib/pipeline";
 
 export const runtime = "nodejs";
-export const maxDuration = 300; // Vercel par Fluid Compute on rakho, warna lamba kaam beech mein kat sakta hai
+export const maxDuration = 300; // keep Fluid Compute on in Vercel, otherwise long jobs can be cut off midway
 
 const bodySchema = z.object({
   idea: z.string().trim().min(3).max(4000),
   genre: z.string().trim().max(100).optional(),
   tone: z.string().trim().max(60).optional(),
   length: z.enum(["SHORT", "LONG"]).default("SHORT"),
-  folderId: z.string().min(1).max(64).optional(), // kisi "Your Projects" folder ke andar banana ho to
+  folderId: z.string().min(1).max(64).optional(), // set when the project should be created inside a "Projects" folder
 });
 
 export async function POST(req: Request) {
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
       if (!folder) return jsonError(404, "NOT_FOUND", "That project was not found.");
     }
 
-    // 1) Pehle check: AI set-up poora hai? (taaki credit kate hi nahi)
+    // 1) First check: is the AI set up? (so no credit is deducted if it is not)
     const previewTier: Funding = previewFunding(user, length);
     const missing = missingAIVars(previewTier);
     if (missing.length > 0) {
@@ -69,7 +69,7 @@ export async function POST(req: Request) {
       throw new LimitError("TOO_LONG", 400, `Please keep your idea under ${maxWords} words.`, { maxWords });
     }
 
-    // 3) Project banao, phir credit roko (credit na mila to project hata do)
+    // 3) Create the project, then reserve credit (if credit cannot be reserved, remove the project)
     const project = await db.project.create({
       data: {
         userId: user.id,
@@ -85,17 +85,15 @@ export async function POST(req: Request) {
 
     let funding: Funding;
     try {
-      funding = await reserveRun(user, length);
-      await db.tokenLedger.create({
-        data: { userId: user.id, projectId: project.id, delta: 0, reason: "RESERVE", meta: { source: funding, length } },
-      });
+      // reserveRun records the reservation (with the amount) against this project in the ledger
+      funding = await reserveRun(user, length, project.id);
       await db.message.create({ data: { projectId: project.id, role: "USER", content: idea } });
     } catch (e) {
       await db.project.delete({ where: { id: project.id } }).catch(() => undefined);
       throw e;
     }
 
-    // 4) Kaam background mein, user ko turant jawab (fail hone par credit wapas)
+    // 4) Do the work in the background and reply to the user immediately (credit is returned on failure)
     await db.project.update({
       where: { id: project.id },
       data: { status: "RESEARCHING", progressNote: "Starting..." },
@@ -113,4 +111,4 @@ export async function POST(req: Request) {
   } catch (e) {
     return handleRouteError(e);
   }
-}
+          }
