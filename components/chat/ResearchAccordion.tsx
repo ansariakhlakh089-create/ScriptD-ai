@@ -16,7 +16,7 @@ export default function ResearchAccordion({ isWorking, status, notes, sources }:
   const [isOpen, setIsOpen] = useState(isWorking);
   const wasWorking = useRef(isWorking);
 
-  // काम पूरा होते ही accordion अपने आप बंद हो जाए
+  // Collapse automatically once the work is finished
   useEffect(() => {
     if (wasWorking.current && !isWorking) setIsOpen(false);
     wasWorking.current = isWorking;
@@ -55,11 +55,11 @@ export default function ResearchAccordion({ isWorking, status, notes, sources }:
           {isWorking && !cleanNotes ? (
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-cream-dim">
-                <CheckCircle2 className="h-3 w-3 text-emerald-400" />
+                <CheckCircle2 className="h-4 w-4 text-emerald-300" />
                 <span>Analyzing your idea...</span>
               </div>
               <div className="flex items-center gap-2 text-cream-dim">
-                <LoaderCircle className="h-3 w-3 animate-spin text-ember" />
+                <LoaderCircle className="h-4 w-4 animate-spin text-ember-soft" />
                 <span>Reading articles and verifying facts...</span>
               </div>
             </div>
@@ -67,8 +67,8 @@ export default function ResearchAccordion({ isWorking, status, notes, sources }:
             <div className="space-y-3">
               {cleanNotes && (
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-cream-dim mb-1">Research Notes</p>
-                  <p className="max-h-48 overflow-y-auto whitespace-pre-wrap text-xs leading-relaxed text-cream-dim">
+                  <p className="mb-1 text-sm font-semibold text-cream-dim">Research notes</p>
+                  <p className="max-h-56 overflow-y-auto whitespace-pre-wrap text-sm leading-relaxed text-cream-dim">
                     {cleanNotes}
                   </p>
                 </div>
@@ -76,21 +76,21 @@ export default function ResearchAccordion({ isWorking, status, notes, sources }:
               
               {sources.length > 0 && (
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-cream-dim mb-2">Sources</p>
-                  <ul className="space-y-2">
+                  <p className="mb-2 text-sm font-semibold text-cream-dim">Sources</p>
+                  <ul className="space-y-3">
                     {sources.map((s, i) => (
                       <li key={i} className="flex items-start gap-2">
-                        <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] text-cream-dim">
+                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs text-cream-dim">
                           {i + 1}
                         </span>
                         <a 
                           href={s.url} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="text-xs text-ember-soft hover:underline flex items-center gap-1"
+                          className="flex min-w-0 items-center gap-1 break-words py-0.5 text-sm text-ember-soft hover:underline"
                         >
                           {s.title || s.url}
-                          <ExternalLink className="h-3 w-3" />
+                          <ExternalLink className="h-3.5 w-3.5 shrink-0" />
                         </a>
                       </li>
                     ))}
