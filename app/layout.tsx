@@ -3,7 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { Outfit, Noto_Sans_Devanagari } from "next/font/google";
 import "./globals.css";
 
-// 1. मुख्य इंग्लिश फॉन्ट (SaaS और ChatGPT जैसा मॉडर्न लुक)
+// 1. Primary UI font (clean, modern)
 const outfit = Outfit({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -12,7 +12,7 @@ const outfit = Outfit({
   fallback: ["system-ui", "sans-serif"],
 });
 
-// 2. हिंदी (देवनागरी) फॉन्ट
+// 2. Devanagari font, used when a generated script is written in Hindi
 const hindi = Noto_Sans_Devanagari({
   subsets: ["devanagari"],
   weight: ["400", "500", "600", "700"],
@@ -21,7 +21,7 @@ const hindi = Noto_Sans_Devanagari({
   fallback: ["system-ui", "sans-serif"],
 });
 
-// 3. पूरा SEO और मेटाडेटा सेटअप (Google पर रैंक करने और शेयरिंग के लिए)
+// 3. SEO and sharing metadata
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
   title: {
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     siteName: "ScriptD AI",
     images: [
       {
-        url: "/og-image.png", // आप चाहें तो public फोल्डर में एक इमेज रख सकते हैं
+        url: "/og-image.png", // place this image in the public folder
         width: 1200,
         height: 630,
         alt: "ScriptD AI Preview",
@@ -68,16 +68,14 @@ export const metadata: Metadata = {
   },
 };
 
-// 4. मोबाइल के लिए व्यूअपोर्ट सेटिंग्स (थीम कलर डार्क ब्लू कर दिया है)
+// 4. Mobile viewport. Zooming stays enabled so people with low vision can enlarge text.
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1, // जूम होने से रोकने के लिए (App जैसा फील देने के लिए)
-  userScalable: false,
-  themeColor: "#080B18", // आपके नए Deep Navy कलर के अनुसार
+  themeColor: "#0F1A1F",
 };
 
-// 5. पूरा HTML स्ट्रक्चर
+// 5. Root HTML structure
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${outfit.variable} ${hindi.variable}`} suppressHydrationWarning>
