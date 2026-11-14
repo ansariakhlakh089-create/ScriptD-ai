@@ -101,12 +101,13 @@ export const auth = betterAuth({
           type === "sign-in"
             ? `${otp} is your ${APP_NAME} login code`
             : `${otp} is your ${APP_NAME} verification code`;
+        // Updated email text colors to match dark theme
         const html = `
-          <div style="font-family:Arial,sans-serif;max-width:420px;margin:auto;padding:24px;color:#13222A">
-            <h2 style="margin:0 0 8px">${APP_NAME}</h2>
-            <p style="margin:0 0 16px">Your one-time code:</p>
-            <p style="font-size:32px;font-weight:700;letter-spacing:6px;margin:0 0 16px">${otp}</p>
-            <p style="color:#5C7078;margin:0">This code works for 5 minutes. If you did not ask for it, ignore this email.</p>
+          <div style="font-family:Arial,sans-serif;max-width:420px;margin:auto;padding:24px;color:#0A0F1D">
+            <h2 style="margin:0 0 8px;color:#0A0F1D;">${APP_NAME}</h2>
+            <p style="margin:0 0 16px;color:#0A0F1D;">Your one-time code:</p>
+            <p style="font-size:32px;font-weight:700;letter-spacing:6px;margin:0 0 16px;color:#F43F5E;">${otp}</p>
+            <p style="color:#64748B;margin:0">This code works for 5 minutes. If you did not ask for it, ignore this email.</p>
           </div>`;
         await sendEmail(email, subject, html);
       },
