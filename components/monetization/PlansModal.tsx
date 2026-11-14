@@ -10,7 +10,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onPurchased: () => void;
-  message?: string; // jaise "Long scripts need a plan"
+  message?: string; // e.g. "Long scripts need a plan"
 }
 
 interface OrderResponse {
@@ -81,7 +81,7 @@ export default function PlansModal({ open, onClose, onPurchased, message }: Prop
         description: order.label,
         order_id: order.orderId,
         prefill: order.prefill,
-        theme: { color: "#ff6b35" },
+        theme: { color: "#237A6F" },
         handler: async (resp: RazorpaySuccess) => {
           try {
             await api("/api/checkout", {
@@ -128,7 +128,7 @@ export default function PlansModal({ open, onClose, onPurchased, message }: Prop
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-cream hover:bg-white/20"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-cream hover:bg-white/20"
           >
             <X className="h-5 w-5" aria-hidden />
           </button>
@@ -157,23 +157,23 @@ export default function PlansModal({ open, onClose, onPurchased, message }: Prop
                   <div>
                     <p className="flex items-center gap-2 text-base font-semibold text-white">
                       {p.label}
-                      {p.highlight && (
-                        <span className="rounded-full bg-ember px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                          Popular
+                      {p.badge && (
+                        <span className="rounded-full bg-ember px-2.5 py-0.5 text-xs font-semibold text-white">
+                          {p.badge}
                         </span>
                       )}
                     </p>
-                    <p className="text-xs text-cream-dim">{p.days} days</p>
+                    <p className="text-sm text-cream-dim">{p.days} days</p>
                   </div>
                   <p className="text-xl font-bold text-ember-soft">{formatINR(p.pricePaise)}</p>
                 </div>
                 <ul className="mt-3 space-y-1.5">
                   {p.perks.map((perk) => (
-                    <li key={perk} className="flex items-start gap-2 text-sm text-cream">
+                    <li key={perk} className="flex items-start gap-2 text-base text-cream">
                       <Check className="mt-0.5 h-4 w-4 shrink-0 text-ember-soft" aria-hidden /> {perk}
                     </li>
                   ))}
-                  <li className="flex items-start gap-2 text-sm text-cream">
+                  <li className="flex items-start gap-2 text-base text-cream">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-ember-soft" aria-hidden />
                     {p.tokens.toLocaleString("en-IN")} tokens
                   </li>
@@ -191,14 +191,14 @@ export default function PlansModal({ open, onClose, onPurchased, message }: Prop
           })}
         </div>
 
-        <h3 className="mt-6 text-sm font-semibold uppercase tracking-wide text-cream-dim">Script packs</h3>
+        <h3 className="mt-6 text-base font-semibold text-cream-dim">Script packs</h3>
         <div className="mt-3 grid grid-cols-2 gap-3">
           {PACK_KEYS.map((key) => {
             const p = PRODUCTS[key];
             return (
               <div key={key} className="flex flex-col justify-between rounded-2xl border border-white/20 bg-white/5 p-4">
                 <div>
-                  <p className="text-sm font-semibold text-white">{p.label}</p>
+                  <p className="text-base font-semibold text-white">{p.label}</p>
                   <p className="mt-1 text-lg font-bold text-ember-soft">{formatINR(p.pricePaise)}</p>
                 </div>
                 <button
@@ -214,8 +214,8 @@ export default function PlansModal({ open, onClose, onPurchased, message }: Prop
           })}
         </div>
 
-        <p className="mt-5 text-center text-xs text-cream-dim">Secure payment by Razorpay (UPI, cards, netbanking).</p>
+        <p className="mt-5 text-center text-sm text-cream-dim">Secure payment by Razorpay (UPI, cards, netbanking).</p>
       </div>
     </div>
   );
-}
+                                                                                                  }
