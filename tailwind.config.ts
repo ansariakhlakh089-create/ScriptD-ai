@@ -1,4 +1,4 @@
-// FILE: tailwind.config.ts
+l// FILE: tailwind.config.ts
 import type { Config } from "tailwindcss";
 
 const config: Config = {
@@ -11,22 +11,18 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Primary: Deep Navy / Almost Black
         plum: { DEFAULT: "#080B18", deep: "#04060D", glass: "#191B32" },
-        // Cards / Containers
         taupe: { DEFAULT: "#191B32", light: "#232645", deep: "#080B18" },
-        // Text: White & Secondary: Lavender
         cream: { DEFAULT: "#FFFFFF", dim: "#A995FF" },
-        // Accent: Electric Purple & Secondary: Lavender
         ember: { DEFAULT: "#7545F5", hover: "#8B62FF", soft: "#A995FF", deep: "#5A32D6" },
-        // VIP: Golden
         gold: { DEFAULT: "#E9AE36", hover: "#F0BC52", deep: "#C48B1B" },
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "var(--font-hindi)", "system-ui", "sans-serif"],
+        // यहाँ नया फॉन्ट जोड़ दिया गया है
+        sans: ["var(--font-outfit)", "var(--font-hindi)", "system-ui", "sans-serif"],
       },
       boxShadow: {
-        glow: "0 10px 30px -8px rgba(117, 69, 245, 0.45)", // Electric Purple glow
+        glow: "0 10px 30px -8px rgba(117, 69, 245, 0.45)",
         glass: "0 12px 40px -12px rgba(0,0,0,0.6)",
       },
       keyframes: {
