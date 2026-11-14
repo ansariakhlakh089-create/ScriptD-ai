@@ -63,7 +63,7 @@ export default function ScriptPanel({ project }: { project: ProjectDTO | null })
     a.href = url;
     a.download = `${project.title || "script"}.txt`;
     a.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   return (
@@ -74,6 +74,7 @@ export default function ScriptPanel({ project }: { project: ProjectDTO | null })
         </p>
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={handleDownload}
             className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs text-cream hover:bg-white/20 transition"
           >
@@ -110,13 +111,6 @@ export default function ScriptPanel({ project }: { project: ProjectDTO | null })
             ))}
           </div>
         </Section>
-      )}
-      
-      {/* API Cost Display */}
-      {project.apiCostUsd !== undefined && project.apiCostUsd > 0 && (
-        <p className="text-center text-[10px] text-cream-dim/50 mt-4">
-          API Cost: ${project.apiCostUsd.toFixed(4)} (approx ₹{(project.apiCostUsd * 83).toFixed(2)})
-        </p>
       )}
     </div>
   );
