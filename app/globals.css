@@ -5,13 +5,14 @@
 
 @layer base {
   html {
+    color-scheme: dark;
     -webkit-tap-highlight-color: transparent;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
   }
 
   body {
-    @apply bg-taupe text-cream antialiased;
+    @apply bg-plum text-cream antialiased;
   }
 
   ::selection {
@@ -32,7 +33,7 @@
 
 @layer components {
   .auth-bg {
-    background: radial-gradient(120% 70% at 50% 35%, #7545F5 0%, #191B32 50%, #080B18 100%);
+    background: radial-gradient(120% 70% at 50% 35%, #1F5A57 0%, #14262E 50%, #0C161B 100%);
   }
 
   .glass {
@@ -43,13 +44,13 @@
     @apply rounded-3xl border border-white/10 bg-plum-glass/40 shadow-glass backdrop-blur-md;
   }
 
-  /* Login wala card: background se thoda mix kiya gaya hai */
+  /* Login card: slightly blended with the background */
   .glass-card-live {
     @apply rounded-3xl border border-white/10 bg-plum-glass/50 shadow-glass backdrop-blur-lg;
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
   }
 
   .btn-ember {
@@ -65,22 +66,22 @@
   }
 
   .field:focus {
-    box-shadow: 0 0 0 4px rgba(117, 69, 245, 0.18);
+    box-shadow: 0 0 0 4px rgba(143, 214, 202, 0.18);
   }
 
   .chip {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-cream transition hover:bg-white/10;
+    @apply inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3.5 py-2 text-sm font-medium text-cream transition hover:bg-white/10;
   }
 
   .gradient-text {
-    background-image: linear-gradient(90deg, #A995FF 0%, #7545F5 55%, #E9AE36 100%);
+    background-image: linear-gradient(90deg, #8FD6CA 0%, #4FB3A5 55%, #D4B06A 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
 
   .gradient-text-live {
-    background-image: linear-gradient(90deg, #A995FF 0%, #7545F5 25%, #E9AE36 50%, #A995FF 75%, #7545F5 100%);
+    background-image: linear-gradient(90deg, #8FD6CA 0%, #4FB3A5 25%, #D4B06A 50%, #8FD6CA 75%, #4FB3A5 100%);
     background-size: 200% auto;
     -webkit-background-clip: text;
     background-clip: text;
@@ -89,7 +90,7 @@
   }
 
   .title-glow {
-    text-shadow: 0 0 28px rgba(117, 69, 245, 0.45);
+    text-shadow: 0 0 28px rgba(79, 179, 165, 0.30);
   }
 
   .glow-ring {
@@ -102,7 +103,7 @@
     inset: -1px;
     border-radius: inherit;
     pointer-events: none;
-    box-shadow: 0 0 30px 2px rgba(117, 69, 245, 0.4);
+    box-shadow: 0 0 30px 2px rgba(79, 179, 165, 0.30);
     opacity: 0.3;
     animation: glowpulse 3.2s ease-in-out infinite;
   }
@@ -147,7 +148,7 @@
     height: 22rem;
     top: -6rem;
     left: -7rem;
-    background: radial-gradient(circle at 35% 35%, rgba(117, 69, 245, 0.45), transparent 65%);
+    background: radial-gradient(circle at 35% 35%, rgba(63, 167, 150, 0.28), transparent 65%);
     animation: drift-a 14s ease-in-out infinite alternate;
   }
 
@@ -156,7 +157,7 @@
     height: 20rem;
     top: 38%;
     right: -8rem;
-    background: radial-gradient(circle, rgba(169, 149, 255, 0.3), transparent 65%);
+    background: radial-gradient(circle, rgba(143, 214, 202, 0.16), transparent 65%);
     animation: drift-b 18s ease-in-out infinite alternate;
   }
 
@@ -165,7 +166,7 @@
     height: 24rem;
     bottom: -9rem;
     left: 5%;
-    background: radial-gradient(circle, rgba(233, 174, 54, 0.15), transparent 65%);
+    background: radial-gradient(circle, rgba(212, 176, 106, 0.10), transparent 65%);
     animation: drift-a 20s ease-in-out infinite alternate-reverse;
   }
 
@@ -175,7 +176,7 @@
     width: 4px;
     height: 4px;
     border-radius: 9999px;
-    background: rgba(169, 149, 255, 0.85);
+    background: rgba(143, 214, 202, 0.70);
     opacity: 0;
     animation: rise 9s linear infinite;
   }
@@ -268,4 +269,4 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-    }
+}
