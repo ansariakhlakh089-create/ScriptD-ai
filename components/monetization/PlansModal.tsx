@@ -218,4 +218,4 @@ export default function PlansModal({ open, onClose, onPurchased, message }: Prop
       </div>
     </div>
   );
-}
+        }
