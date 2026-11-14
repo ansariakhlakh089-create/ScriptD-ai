@@ -33,7 +33,7 @@ export default function AppHeader({ user, onUpgrade }: Props) {
   }
 
   return (
-    <header className="relative border-b border-black/30 bg-black/10 px-5 py-4">
+    <header className="relative border-b border-white/5 bg-white/[0.03] px-5 py-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight text-cream">ScriptD AI</h1>
         <button
@@ -61,7 +61,7 @@ export default function AppHeader({ user, onUpgrade }: Props) {
 
             <div className="mt-4 rounded-xl bg-white/10 p-3">
               <p className="text-sm font-semibold text-ember-soft">{planLabel}</p>
-              {user && <p className="mt-1 text-xs leading-relaxed text-cream-dim">{usageLine(user)}</p>}
+              {user && <p className="mt-1 text-sm leading-relaxed text-cream-dim">{usageLine(user)}</p>}
             </div>
 
             <button
