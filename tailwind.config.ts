@@ -19,6 +19,8 @@ const config: Config = {
         cream: { DEFAULT: "#E8EEF0", dim: "#9FB4BC" }, // text
         ember: { DEFAULT: "#237A6F", hover: "#2B8F82", soft: "#8FD6CA", deep: "#1A5C54" }, // accent
         gold: { DEFAULT: "#D4B06A", hover: "#DDBE82", deep: "#B08D4A" }, // highlight
+        blush: { DEFAULT: "#E8A29B", soft: "#F2C1BB", deep: "#C97B73" }, // emotional lines
+        mist: { DEFAULT: "#8DB9E8", soft: "#B5D3F2", deep: "#5F93C9" }, // quotes, links, camera terms
       },
       fontFamily: {
         sans: ["var(--font-outfit)", "var(--font-hindi)", "system-ui", "sans-serif"],
