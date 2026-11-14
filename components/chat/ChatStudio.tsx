@@ -25,7 +25,7 @@ type Badge = "none" | "loading" | "ready";
 const TABS: { key: Tab; label: string }[] = [
   { key: "chat", label: "Chat" },
   { key: "script", label: "Script" },
-  { key: "vprompt", label: "V-prompt" },
+  { key: "vprompt", label: "Visuals" },
 ];
 
 interface Props {
@@ -293,29 +293,17 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
 
   return (
     <div className="mx-auto flex h-dvh w-full max-w-2xl flex-col">
-      <TopBar
-        hasProject={Boolean(project)}
-        canCopyScript={Boolean(project?.script)}
-        canCopyPrompts={Boolean(project && project.vPrompts.length > 0)}
-        onCopyScript={() => project && void copyText(scriptEverything(project))}
-        onCopyPrompts={() => project && void copyText(allPromptsText(project.vPrompts))}
-        folders={folders}
-        currentFolderId={project?.folderId ?? null}
-        onMove={moveToFolder}
-        onDelete={deleteProject}
-      />
-
-      <div className="flex items-center gap-1.5 border-b border-white/5 px-3 py-1.5">
+      <div className="flex items-center gap-1 border-b border-white/5 px-2 py-1.5">
         <button
           type="button"
           onClick={() => setDrawerOpen(true)}
           aria-label="Your chats"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-cream hover:bg-white/10"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-cream hover:bg-white/10"
         >
           <Menu className="h-5 w-5" aria-hidden />
         </button>
 
-        <div role="tablist" aria-label="Sections" className="flex min-w-0 flex-1 items-center justify-center gap-1.5">
+        <div role="tablist" aria-label="Sections" className="no-scrollbar flex min-w-0 flex-1 items-center justify-center gap-1 overflow-x-auto">
           {TABS.map(({ key, label }) => {
             const active = tab === key;
             const badge = badges[key];
@@ -326,13 +314,13 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
                 role="tab"
                 aria-selected={active}
                 onClick={() => setTab(key)}
-                className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                className={`inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-sm font-semibold transition ${
                   active ? "border-ember/30 bg-ember/15 text-ember-soft" : "border-white/10 bg-white/5 text-cream hover:bg-white/10"
                 }`}
               >
                 {label}
-                {badge === "loading" && <LoaderCircle className="h-3 w-3 animate-spin" aria-label="Working" />}
-                {badge === "ready" && <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" aria-label="Ready" />}
+                {badge === "loading" && <LoaderCircle className="h-4 w-4 animate-spin" aria-label="Working" />}
+                {badge === "ready" && <span className="h-2 w-2 rounded-full bg-emerald-300" aria-label="Ready" />}
               </button>
             );
           })}
@@ -342,10 +330,22 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
           type="button"
           onClick={startNew}
           aria-label="New chat"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-cream hover:bg-white/10"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-cream hover:bg-white/10"
         >
-          <Plus className="h-4 w-4" aria-hidden />
+          <Plus className="h-5 w-5" aria-hidden />
         </button>
+
+        <TopBar
+          hasProject={Boolean(project)}
+          canCopyScript={Boolean(project?.script)}
+          canCopyPrompts={Boolean(project && project.vPrompts.length > 0)}
+          onCopyScript={() => project && void copyText(scriptEverything(project))}
+          onCopyPrompts={() => project && void copyText(allPromptsText(project.vPrompts))}
+          folders={folders}
+          currentFolderId={project?.folderId ?? null}
+          onMove={moveToFolder}
+          onDelete={deleteProject}
+        />
       </div>
 
       <div className="relative min-h-0 flex-1">
@@ -378,7 +378,7 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
       {error && (
         <div role="alert" className="mx-3 mb-1.5 flex items-start gap-3 rounded-2xl bg-red-950/50 px-4 py-2.5 text-sm text-red-100">
           <span className="flex-1">{error}</span>
-          <button type="button" onClick={() => setError(null)} className="font-semibold underline-offset-2 hover:underline">
+          <button type="button" onClick={() => setError(null)} className="px-2 py-1 font-semibold underline-offset-2 hover:underline">
             Dismiss
           </button>
         </div>
@@ -409,5 +409,5 @@ export default function ChatStudio({ initialId, initialIdea, initialFolderId }: 
       />
     </div>
   );
-    }
-                                     
+      }
+                              
