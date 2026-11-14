@@ -3,6 +3,8 @@
 
 import { Check, ExternalLink, LoaderCircle } from "lucide-react";
 import CopyButton from "@/components/shared/CopyButton";
+import { PromptLegend, PromptText } from "@/components/shared/ColorText";
+import { stripMarks } from "@/lib/script-format";
 import type { ProjectDTO, VPromptItem } from "@/types";
 
 interface Props {
@@ -67,26 +69,48 @@ export default function VPromptPanel({ project, onToggle }: Props) {
     <div className="space-y-4 pb-6">
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-cream-dim">
-          {doneCount} of {items.length} done
+          <span className="font-semibold text-ember-soft">{doneCount}</span> of{" "}
+          <span className="font-semibold text-gold">{items.length}</span> done
         </p>
         <CopyButton text={allPromptsText(items)} label="Copy all" />
       </div>
+      {items.some((i) => i.kind === "IMAGE") && <PromptLegend />}
 
       <ul className="space-y-4">
         {items.map((item) => (
-          <li key={item.id} className="glass animate-fade-up p-4">
+          <li
+            key={item.id}
+            className={`glass animate-fade-up border-l-4 p-4 ${item.done ? "border-l-ember" : item.kind === "IMAGE" ? "border-l-ember/40" : "border-l-mist/50"}`}
+          >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-ember-soft">
-                  Scene {item.id} · {item.kind === "IMAGE" ? "Image prompt" : "Screenshot"}
+                <p className="flex flex-wrap items-center gap-2 text-sm font-semibold">
+                  <span className="text-gold">Scene {item.id}</span>
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 text-[13px] ${
+                      item.kind === "IMAGE" ? "bg-ember/20 text-ember-soft" : "bg-mist/15 text-mist-soft"
+                    }`}
+                  >
+                    {item.kind === "IMAGE" ? "Image prompt" : "Screenshot"}
+                  </span>
                 </p>
-                {item.sceneLine && <p className="mt-1.5 text-sm leading-relaxed text-cream-dim">“{item.sceneLine}”</p>}
+                {item.sceneLine && (
+                  <p className="mt-2 border-l-2 border-l-gold/60 pl-3 text-sm leading-relaxed text-cream-dim">
+                    <span className="text-gold">“</span>
+                    {stripMarks(item.sceneLine)}
+                    <span className="text-gold">”</span>
+                  </p>
+                )}
               </div>
               <CopyButton text={copyTextFor(item)} ariaLabel={`Copy scene ${item.id}`} />
             </div>
 
-            <div className="mt-3 whitespace-pre-wrap rounded-xl border border-white/20 bg-black/15 p-3 text-base leading-relaxed text-cream">
-              {item.kind === "IMAGE" ? item.prompt : item.instruction}
+            <div
+              className={`mt-3 whitespace-pre-wrap rounded-xl border bg-black/15 p-3 text-base leading-relaxed text-cream ${
+                item.kind === "IMAGE" ? "border-ember/30" : "border-mist/30"
+              }`}
+            >
+              {item.kind === "IMAGE" ? <PromptText text={item.prompt ?? ""} /> : item.instruction}
             </div>
 
             {item.kind === "SCREENSHOT" &&
