@@ -3,6 +3,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, Globe, LoaderCircle, CheckCircle2, ExternalLink } from "lucide-react";
+import { NotesText } from "@/components/shared/ColorText";
 import type { SourceItem } from "@/types";
 
 interface Props {
@@ -22,7 +23,7 @@ export default function ResearchAccordion({ isWorking, status, notes, sources }:
     wasWorking.current = isWorking;
   }, [isWorking]);
 
-  const cleanNotes = notes ? notes.replace(/^#{1,4}\s+/gm, "").trim() : null;
+  const cleanNotes = notes ? notes.trim() : null;
 
   const workingText = status === "RESEARCHING" 
     ? "Searching the web..." 
@@ -44,7 +45,13 @@ export default function ResearchAccordion({ isWorking, status, notes, sources }:
             <Globe className="h-4 w-4 text-ember" />
           )}
           <span className={isWorking ? "animate-pulse text-ember-soft font-medium" : "text-cream"}>
-            {isWorking ? workingText : `Researched ${sources.length} sources`}
+            {isWorking ? (
+              workingText
+            ) : (
+              <>
+                Researched <span className="font-semibold text-gold">{sources.length}</span> sources
+              </>
+            )}
           </span>
         </div>
         {isOpen ? <ChevronUp className="h-4 w-4 text-cream-dim" /> : <ChevronDown className="h-4 w-4 text-cream-dim" />}
@@ -67,27 +74,27 @@ export default function ResearchAccordion({ isWorking, status, notes, sources }:
             <div className="space-y-3">
               {cleanNotes && (
                 <div>
-                  <p className="mb-1 text-sm font-semibold text-cream-dim">Research notes</p>
-                  <p className="max-h-56 overflow-y-auto whitespace-pre-wrap text-sm leading-relaxed text-cream-dim">
-                    {cleanNotes}
-                  </p>
+                  <p className="mb-2 text-sm font-semibold text-gold">Research notes</p>
+                  <div className="max-h-72 overflow-y-auto pr-1">
+                    <NotesText text={cleanNotes} />
+                  </div>
                 </div>
               )}
               
               {sources.length > 0 && (
                 <div>
-                  <p className="mb-2 text-sm font-semibold text-cream-dim">Sources</p>
+                  <p className="mb-2 text-sm font-semibold text-mist">Sources</p>
                   <ul className="space-y-3">
                     {sources.map((s, i) => (
                       <li key={i} className="flex items-start gap-2">
-                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs text-cream-dim">
+                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ember/20 text-xs font-semibold text-ember-soft">
                           {i + 1}
                         </span>
                         <a 
                           href={s.url} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="flex min-w-0 items-center gap-1 break-words py-0.5 text-sm text-ember-soft hover:underline"
+                          className="flex min-w-0 items-center gap-1 break-words py-0.5 text-sm text-mist-soft hover:underline"
                         >
                           {s.title || s.url}
                           <ExternalLink className="h-3.5 w-3.5 shrink-0" />
