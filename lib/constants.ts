@@ -1,6 +1,6 @@
 // FILE: lib/constants.ts
-// Saari limits, plans aur prices yahin se control hote hain.
-// Kuch badalna ho (price, tokens, free limit) to sirf is file mein badlo.
+// All limits, plans and prices are controlled from this file.
+// To change a price, token amount or free limit, edit only this file.
 
 export const APP_NAME = "ScriptD AI";
 export const APP_TAGLINE = "Your Content Creation Journey";
@@ -18,42 +18,42 @@ export type ProjectStatus =
   | "DONE"
   | "ERROR";
 
-// In status mein kaam chal raha hota hai ("working" indicator dikhao)
+// While a project is in one of these statuses, show the "working" indicator
 export const WORKING_STATUSES: ProjectStatus[] = ["RESEARCHING", "SCRIPTING", "VPROMPTING"];
 
 // ---------------------------------------------------------------- free tier
-// 3000 tokens mein ek short script (~4000 tokens) poori hi nahi ho paati thi, isliye 8000.
-// Free window har 24 ghante mein reset hoti hai, to ek active free user par roz ~Rs 2-2.5 tak ka kharch.
+// 3,000 tokens was not enough to finish one short script (~4,000 tokens), so the free pool is larger.
+// The free window resets every 24 hours, so an active free user costs roughly Rs 2-2.5 per day.
 export const FREE_LIMITS = {
-  resetHours: 24, // free window kitne ghante ka
+  resetHours: 24, // length of the free window in hours
   chatsPerWindow: 3, // 3 free chats
-  messagesPerChat: 5, // har chat mein 5 messages  (TODO: tumne kabhi 7 bhi likha tha - confirm karo)
-  tokensPerWindow: 10000, // sabhi kaam ka ek shared pool (1 short script + thodi chat)
-  shortScriptsPerWindow: 1, // free mein sirf 1 short script
+  messagesPerChat: 5, // 5 messages per chat (TODO: an earlier note said 7 - please confirm)
+  tokensPerWindow: 10000, // one shared pool for all work (1 short script + a little chat)
+  shortScriptsPerWindow: 1, // the free plan includes only 1 short script
   longScriptsPerWindow: 0,
-  maxWordsPerQuestion: 123, // free user ke sawal ki word limit
-  extraWordsPerAdUnlock: 50, // 2 ads dekho -> 50 extra words
-  adUnlocksPerWindow: 3, // saare chats mila kar sirf 3 ad-unlock
+  maxWordsPerQuestion: 123, // word limit for a free user's question
+  extraWordsPerAdUnlock: 50, // watch 2 ads -> 50 extra words
+  adUnlocksPerWindow: 3, // only 3 ad unlocks across all chats
   adsForShortQuestion: 2,
   adsForBigQuestion: 4,
-  bigQuestionWords: 60, // is se zyada words = "big question" (TODO: tumhara number batao)
+  bigQuestionWords: 60, // more words than this counts as a "big question" (TODO: confirm the number)
 } as const;
 
 // ---------------------------------------------------------------- products
-// Tokens ka aadhaar: 1 long ~ 10,000, 1 short ~ 4,000, upar se ~20% chat/follow-up ke liye.
-// (lib/token-calculator.ts ke andaazon se ek baar mila lena)
+// Token basis: 1 long script ~ 10,000, 1 short ~ 4,000, plus ~20% for chat and follow-ups.
+// (Cross-check once against the estimates in lib/token-calculator.ts)
 export interface Product {
   key: ProductKey;
   kind: "PLAN" | "PACK";
   label: string;
   pricePaise: number; // 9900 = Rs 99
-  days: number; // plan kitne din chalega (pack ke liye 0)
-  tokens: number; // kharidne par kitne tokens milenge
+  days: number; // how long the plan lasts (0 for packs)
+  tokens: number; // tokens granted on purchase
   longScripts: number;
   shortScripts: number;
   perks: string[];
   highlight?: boolean;
-  badge?: string; // card par chhota nishaan, jaise "Popular"
+  badge?: string; // small label on the card, e.g. "Popular"
 }
 
 export const PRODUCTS: Record<ProductKey, Product> = {
@@ -81,7 +81,7 @@ export const PRODUCTS: Record<ProductKey, Product> = {
     days: 7,
     tokens: 35000,
     longScripts: 2,
-    shortScripts: 1, // bonus short script. Hatana ho to 0 kar do
+    shortScripts: 1, // bonus short script. Set to 0 to remove it
     perks: [
       "2 long scripts + 1 bonus short",
       "Deep research, sources and roadmap",
@@ -114,7 +114,7 @@ export const PRODUCTS: Record<ProductKey, Product> = {
     label: "3 Long scripts",
     pricePaise: 12900,
     days: 0,
-    tokens: 38000, // pehle packs mein 0 tha, to pack akele par script nahi chalti thi
+    tokens: 38000, // packs used to grant 0 tokens, so a pack on its own could not run a script
     longScripts: 3,
     shortScripts: 0,
     perks: ["3 extra long scripts"],
@@ -124,7 +124,7 @@ export const PRODUCTS: Record<ProductKey, Product> = {
 export const PLAN_KEYS: Exclude<PlanKey, "FREE">[] = ["WEEKLY_49", "WEEKLY_99", "MONTHLY_249"];
 export const PACK_KEYS: PackKey[] = ["LONG_3"];
 
-// Client se aaya hua key trust nahi karte - hamesha yahan se verify karke price lete hain
+// The key sent by the client is never trusted - always verify it here and take the price from this file
 export function getProduct(key: unknown): Product | null {
   if (typeof key !== "string") return null;
   return Object.prototype.hasOwnProperty.call(PRODUCTS, key) ? PRODUCTS[key as ProductKey] : null;
