@@ -55,7 +55,7 @@ function RichText({ text }: { text: string }) {
       if (heading) {
         flush();
         list.push(
-          <h3 key={list.length} className="mb-1 mt-4 text-sm font-semibold uppercase tracking-wide text-ember-soft">
+          <h3 key={list.length} className="mb-1 mt-4 text-base font-semibold text-ember-soft">
             {renderInline(heading[1])}
           </h3>
         );
@@ -131,9 +131,9 @@ export default function ChatPanel({
           <>
             <p className="text-xl font-semibold text-white">What do you want to create?</p>
             <p className="mt-2 text-base leading-relaxed text-cream-dim">
-              Neeche apna idea likho. Topic, Type aur Tone chuno to script aur behtar banegi.
+              Write your idea below. Pick a topic, type and tone for a better script.
               <br />
-              Pehle research aur links milenge, phir script aur visual prompts.
+              You will get research and sources first, then your script and visual prompts.
             </p>
           </>
         )}
@@ -150,7 +150,7 @@ export default function ChatPanel({
       <div id="msg-idea" className="flex scroll-mt-2 justify-end">
         <div className="max-w-[88%] rounded-2xl rounded-br-md bg-ember/25 px-4 py-3">
           <p className="whitespace-pre-wrap text-base leading-relaxed text-white">{project.topic}</p>
-          <div className="mt-2 text-xs text-ember-soft">
+          <div className="mt-2 text-sm text-ember-soft">
             {project.genre && <span>{project.genre}</span>}
             {project.tone && <span className="ml-2">• {project.tone}</span>}
             <span className="ml-2">• {project.length === "LONG" ? "Long (10 min)" : "Short (1 min)"}</span>
@@ -173,7 +173,7 @@ export default function ChatPanel({
             <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
             {project.errorMessage ?? "Something went wrong."}
           </p>
-          <button type="button" onClick={onRetry} className="btn-ember mt-3 text-sm py-1.5">
+          <button type="button" onClick={onRetry} className="btn-ember mt-3 text-sm py-2.5">
             Try again
           </button>
         </section>
@@ -182,12 +182,12 @@ export default function ChatPanel({
       {project.status === "DONE" && (
         <section id="msg-ready" className="animate-fade-up scroll-mt-2 rounded-2xl border border-ember/60 bg-ember/10 p-4">
           <p className="text-base font-semibold text-white">Your script is ready!</p>
-          {project.errorMessage && <p className="mt-1 text-sm text-amber-100/80">{project.errorMessage}</p>}
+          {project.errorMessage && <p className="mt-1 text-sm text-gold">{project.errorMessage}</p>}
           <div className="mt-3 flex flex-wrap gap-2">
-            <button type="button" onClick={() => onGoTab("script")} className="btn-ember text-sm py-1.5">
+            <button type="button" onClick={() => onGoTab("script")} className="btn-ember text-sm py-2.5">
               View script
             </button>
-            <button type="button" onClick={() => onGoTab("vprompt")} className="btn-glass text-sm py-1.5">
+            <button type="button" onClick={() => onGoTab("vprompt")} className="btn-glass text-sm py-2.5">
               Visual prompts
             </button>
           </div>
@@ -220,4 +220,4 @@ export default function ChatPanel({
       )}
     </div>
   );
-          }
+}
