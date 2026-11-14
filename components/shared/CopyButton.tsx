@@ -9,7 +9,7 @@ export async function copyText(text: string): Promise<boolean> {
     await navigator.clipboard.writeText(text);
     return true;
   } catch {
-    // Purane browsers ke liye dusra tareeka
+    // Fallback for older browsers
     try {
       const area = document.createElement("textarea");
       area.value = text;
@@ -29,7 +29,7 @@ export async function copyText(text: string): Promise<boolean> {
 
 interface Props {
   text: string;
-  label?: string; // likha ho to icon ke saath text dikhega
+  label?: string; // when set, text is shown next to the icon
   ariaLabel?: string;
   className?: string;
 }
@@ -57,7 +57,7 @@ export default function CopyButton({ text, label, ariaLabel, className = "" }: P
       type="button"
       onClick={() => void handleClick()}
       aria-label={ariaLabel ?? label ?? "Copy"}
-      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold transition ${
+      className={`inline-flex shrink-0 items-center gap-1.5 min-h-9 rounded-full px-3.5 py-2 text-sm font-semibold transition ${
         copied ? "bg-emerald-500/30 text-emerald-100" : "bg-white/10 text-cream hover:bg-white/20"
       } ${className}`}
     >
