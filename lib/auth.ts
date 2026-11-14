@@ -1,5 +1,5 @@
 // FILE: lib/auth.ts
-// Login ka server side: Google + Email/Password + Email OTP (Better Auth)
+// Server side of login: Google + Email/Password + Email OTP (Better Auth)
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
@@ -7,7 +7,7 @@ import { emailOTP } from "better-auth/plugins";
 import { db } from "@/lib/db";
 import { APP_NAME } from "@/lib/constants";
 
-// ---- Bharosemand (trusted) pate: local + Vercel ke saare pate ----
+// ---- Trusted origins: local + all Vercel URLs ----
 function buildTrustedOrigins(): string[] {
   const origins = new Set<string>(["http://localhost:3000"]);
   const add = (value?: string) => {
@@ -25,17 +25,17 @@ function buildTrustedOrigins(): string[] {
   return Array.from(origins);
 }
 
-// ---- Email bhejne ka chhota helper (Resend API) ----
+// ---- Small helper that sends email (Resend API) ----
 async function sendEmail(to: string, subject: string, html: string) {
   const apiKey = process.env.RESEND_API_KEY;
 
   if (!apiKey) {
-    // Local testing: OTP terminal mein dikhega. Production mein kabhi print nahi karte (logs leak ho sakte hain).
+    // Local testing: the OTP is printed in the terminal. Never print it in production (logs can leak).
     if (process.env.NODE_ENV !== "production") {
       console.log(`\n[DEV EMAIL] To: ${to}\nSubject: ${subject}\n${html.replace(/<[^>]+>/g, " ")}\n`);
       return;
     }
-    throw new Error("RESEND_API_KEY missing - email nahi bhej sakte");
+    throw new Error("RESEND_API_KEY is missing - cannot send email");
   }
 
   const res = await fetch("https://api.resend.com/emails", {
@@ -86,8 +86,8 @@ export const auth = betterAuth({
     : {},
 
   session: {
-    expiresIn: 60 * 60 * 24 * 30, // 30 din
-    updateAge: 60 * 60 * 24, // roz refresh
+    expiresIn: 60 * 60 * 24 * 30, // 30 days
+    updateAge: 60 * 60 * 24, // refresh daily
     cookieCache: { enabled: true, maxAge: 5 * 60 },
   },
 
@@ -102,15 +102,15 @@ export const auth = betterAuth({
             ? `${otp} is your ${APP_NAME} login code`
             : `${otp} is your ${APP_NAME} verification code`;
         const html = `
-          <div style="font-family:Arial,sans-serif;max-width:420px;margin:auto;padding:24px;color:#1e1426">
+          <div style="font-family:Arial,sans-serif;max-width:420px;margin:auto;padding:24px;color:#13222A">
             <h2 style="margin:0 0 8px">${APP_NAME}</h2>
             <p style="margin:0 0 16px">Your one-time code:</p>
             <p style="font-size:32px;font-weight:700;letter-spacing:6px;margin:0 0 16px">${otp}</p>
-            <p style="color:#6b5d78;margin:0">This code works for 5 minutes. If you did not ask for it, ignore this email.</p>
+            <p style="color:#5C7078;margin:0">This code works for 5 minutes. If you did not ask for it, ignore this email.</p>
           </div>`;
         await sendEmail(email, subject, html);
       },
     }),
-    nextCookies(), // hamesha sabse aakhir mein
+    nextCookies(), // always keep this last
   ],
 });
