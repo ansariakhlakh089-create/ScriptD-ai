@@ -33,7 +33,8 @@
 
 @layer components {
   .auth-bg {
-    background: radial-gradient(120% 70% at 50% 35%, #1F5A57 0%, #14262E 50%, #0C161B 100%);
+    /* Changed from Teal to Navy gradient */
+    background: radial-gradient(120% 70% at 50% 35%, #1A2333 0%, #0F172A 50%, #050812 100%);
   }
 
   .glass {
@@ -66,7 +67,8 @@
   }
 
   .field:focus {
-    box-shadow: 0 0 0 4px rgba(143, 214, 202, 0.18);
+    /* Changed to Rose shadow */
+    box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.18);
   }
 
   .chip {
@@ -74,14 +76,15 @@
   }
 
   .gradient-text {
-    background-image: linear-gradient(90deg, #8FD6CA 0%, #4FB3A5 55%, #D4B06A 100%);
+    /* Updated to Rose/Blue gradient */
+    background-image: linear-gradient(90deg, #FDA4AF 0%, #F43F5E 55%, #38BDF8 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
 
   .gradient-text-live {
-    background-image: linear-gradient(90deg, #8FD6CA 0%, #4FB3A5 25%, #D4B06A 50%, #8FD6CA 75%, #4FB3A5 100%);
+    background-image: linear-gradient(90deg, #FDA4AF 0%, #F43F5E 25%, #38BDF8 50%, #FDA4AF 75%, #F43F5E 100%);
     background-size: 200% auto;
     -webkit-background-clip: text;
     background-clip: text;
@@ -90,7 +93,8 @@
   }
 
   .title-glow {
-    text-shadow: 0 0 28px rgba(79, 179, 165, 0.30);
+    /* Changed to Rose glow */
+    text-shadow: 0 0 28px rgba(244, 63, 94, 0.30);
   }
 
   .glow-ring {
@@ -103,7 +107,8 @@
     inset: -1px;
     border-radius: inherit;
     pointer-events: none;
-    box-shadow: 0 0 30px 2px rgba(79, 179, 165, 0.30);
+    /* Changed to Rose glow */
+    box-shadow: 0 0 30px 2px rgba(244, 63, 94, 0.30);
     opacity: 0.3;
     animation: glowpulse 3.2s ease-in-out infinite;
   }
@@ -148,7 +153,8 @@
     height: 22rem;
     top: -6rem;
     left: -7rem;
-    background: radial-gradient(circle at 35% 35%, rgba(63, 167, 150, 0.28), transparent 65%);
+    /* Changed to Rose glow */
+    background: radial-gradient(circle at 35% 35%, rgba(244, 63, 94, 0.20), transparent 65%);
     animation: drift-a 14s ease-in-out infinite alternate;
   }
 
@@ -157,7 +163,8 @@
     height: 20rem;
     top: 38%;
     right: -8rem;
-    background: radial-gradient(circle, rgba(143, 214, 202, 0.16), transparent 65%);
+    /* Changed to Blue glow */
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.12), transparent 65%);
     animation: drift-b 18s ease-in-out infinite alternate;
   }
 
@@ -166,7 +173,8 @@
     height: 24rem;
     bottom: -9rem;
     left: 5%;
-    background: radial-gradient(circle, rgba(212, 176, 106, 0.10), transparent 65%);
+    /* Changed to Gold glow */
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.08), transparent 65%);
     animation: drift-a 20s ease-in-out infinite alternate-reverse;
   }
 
@@ -176,7 +184,8 @@
     width: 4px;
     height: 4px;
     border-radius: 9999px;
-    background: rgba(143, 214, 202, 0.70);
+    /* Changed to Rose spark */
+    background: rgba(244, 63, 94, 0.70);
     opacity: 0;
     animation: rise 9s linear infinite;
   }
