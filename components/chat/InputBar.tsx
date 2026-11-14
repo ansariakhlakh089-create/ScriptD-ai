@@ -14,7 +14,7 @@ export interface Selection {
   folderId: string | null;
 }
 
-// "Topic" chip ke options (badal sakte ho)
+// Options for the "Topic" chip (edit freely)
 export const TOPICS = [
   "Geopolitics",
   "History",
@@ -39,8 +39,8 @@ interface Props {
   onSelection: (patch: Partial<Selection>) => void;
   folders: FolderDTO[];
   onSend: () => void;
-  busy: boolean; // request chal rahi hai
-  locked: boolean; // script ban rahi hai, abhi type nahi kar sakte
+  busy: boolean; // a request is in progress
+  locked: boolean; // the script is being created, typing is disabled
   maxWords: number | null;
 }
 
@@ -59,7 +59,7 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
           >
             <X className="h-5 w-5" aria-hidden />
           </button>
@@ -113,7 +113,7 @@ export default function InputBar(props: Props) {
       ? "Type your idea for creation..."
       : "Ask a follow-up about this script...";
 
-  // Textbox 1 line se shuru, likhne par khud badhta hai (max 8rem)
+  // The textarea starts at one line and grows as you type (max 8rem)
   useEffect(() => {
     const el = areaRef.current;
     if (!el) return;
@@ -138,9 +138,9 @@ export default function InputBar(props: Props) {
       onClick={onSend}
       disabled={!canSend}
       aria-label="Send"
-      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ember text-white shadow-glow transition hover:bg-ember-hover active:scale-95 disabled:opacity-40 disabled:shadow-none"
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ember text-white shadow-glow transition hover:bg-ember-hover active:scale-95 disabled:opacity-40 disabled:shadow-none"
     >
-      {busy ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> : <ArrowUp className="h-4 w-4" aria-hidden />}
+      {busy ? <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden /> : <ArrowUp className="h-5 w-5" aria-hidden />}
     </button>
   );
 
@@ -165,13 +165,13 @@ export default function InputBar(props: Props) {
             }
           }}
           placeholder={placeholder}
-          className="block max-h-32 min-h-[2.25rem] w-full resize-none bg-transparent px-1.5 py-1.5 text-[15px] leading-snug text-cream outline-none placeholder:text-cream-dim/80 disabled:opacity-60"
+          className="block max-h-32 min-h-[2.5rem] w-full resize-none bg-transparent px-1.5 py-1.5 text-base leading-snug text-cream outline-none placeholder:text-cream-dim/80 disabled:opacity-60"
         />
 
         <div className="mt-1.5 flex items-center gap-1.5">
           {mode === "new" ? (
             <>
-              {/* Teeno chip + (+) + send: sab ek hi line mein, koi side-scroll nahi */}
+              {/* All three chips, the (+) button and send sit on one line, with no sideways scrolling */}
               <div className="flex min-w-0 flex-1 items-center gap-1.5">
                 {chips.map((c) => (
                   <button
@@ -179,12 +179,12 @@ export default function InputBar(props: Props) {
                     type="button"
                     disabled={locked}
                     onClick={() => setSheet(c.kind)}
-                    className={`flex min-w-0 flex-1 basis-0 items-center justify-center gap-1 rounded-full border px-2 py-1 text-[11px] transition hover:bg-white/20 disabled:opacity-50 ${
-                      c.value ? "border-ember/70 bg-ember/15" : "border-white/25 bg-white/10"
+                    aria-label={`${c.label}: ${c.value ?? "not set"}`}
+                    className={`flex min-h-9 min-w-0 flex-1 basis-0 items-center justify-center rounded-full border px-2.5 py-1.5 text-sm transition hover:bg-white/20 disabled:opacity-50 ${
+                      c.value ? "border-ember/70 bg-ember/15 font-semibold text-ember-soft" : "border-white/25 bg-white/10 text-cream-dim"
                     }`}
                   >
-                    <span className="shrink-0 text-cream-dim">{c.label}</span>
-                    <span className="min-w-0 truncate font-semibold text-cream">{c.value ?? "none"}</span>
+                    <span className="min-w-0 truncate">{c.value ?? c.label}</span>
                   </button>
                 ))}
               </div>
@@ -193,15 +193,15 @@ export default function InputBar(props: Props) {
                 disabled={locked}
                 onClick={() => setSheet("more")}
                 aria-label="More options"
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/10 hover:bg-white/20 disabled:opacity-50"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/10 hover:bg-white/20 disabled:opacity-50"
               >
-                <Plus className="h-4 w-4" aria-hidden />
+                <Plus className="h-5 w-5" aria-hidden />
               </button>
             </>
           ) : (
             <div className="min-w-0 flex-1 px-1.5">
               {maxWords !== null && words > maxWords * 0.7 && (
-                <span className={`text-xs font-medium ${overLimit ? "text-red-200" : "text-cream-dim"}`}>
+                <span className={`text-sm font-medium ${overLimit ? "text-red-200" : "text-cream-dim"}`}>
                   {words}/{maxWords} words
                 </span>
               )}
@@ -211,7 +211,7 @@ export default function InputBar(props: Props) {
         </div>
 
         {mode === "new" && maxWords !== null && words > maxWords * 0.7 && (
-          <p className={`mt-1 px-1.5 text-right text-xs font-medium ${overLimit ? "text-red-200" : "text-cream-dim"}`}>
+          <p className={`mt-1 px-1.5 text-right text-sm font-medium ${overLimit ? "text-red-200" : "text-cream-dim"}`}>
             {words}/{maxWords} words
           </p>
         )}
@@ -234,14 +234,14 @@ export default function InputBar(props: Props) {
       )}
       {sheet === "more" && (
         <Sheet title="More options" onClose={() => setSheet(null)}>
-          <p className="text-xs font-semibold uppercase tracking-wide text-cream-dim">Script length</p>
+          <p className="text-sm font-semibold text-cream-dim">Script length</p>
           <div className="mt-2 grid grid-cols-2 gap-3">
             {(Object.keys(SCRIPT_LENGTHS) as ScriptLength[]).map((key) => (
               <button
                 key={key}
                 type="button"
                 onClick={() => onSelection({ length: key })}
-                className={`rounded-2xl border px-3 py-3 text-sm font-semibold transition ${
+                className={`min-h-12 rounded-2xl border px-3 py-3 text-base font-semibold transition ${
                   selection.length === key ? "border-ember bg-ember/20 text-ember-soft" : "border-white/30 bg-white/10 text-cream"
                 }`}
               >
@@ -249,9 +249,9 @@ export default function InputBar(props: Props) {
               </button>
             ))}
           </div>
-          <p className="mt-2 text-xs text-cream-dim">Long scripts come with the Long Pack, the Creator plan or a long-script top-up.</p>
+          <p className="mt-2 text-sm text-cream-dim">Long scripts come with the Long Pack, the Creator plan or a long-script top-up.</p>
 
-          <p className="mt-6 text-xs font-semibold uppercase tracking-wide text-cream-dim">Save in project</p>
+          <p className="mt-6 text-sm font-semibold text-cream-dim">Save in project</p>
           {folders.length === 0 ? (
             <p className="mt-2 text-sm text-cream-dim">You have no projects yet. Create one from the dashboard.</p>
           ) : (
@@ -272,4 +272,4 @@ export default function InputBar(props: Props) {
     </div>
   );
     }
-            
+                    
