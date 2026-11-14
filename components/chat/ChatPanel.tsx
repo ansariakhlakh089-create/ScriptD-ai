@@ -2,10 +2,10 @@
 "use client";
 
 import { useMemo } from "react";
-import { Check, CircleAlert, Copy, ExternalLink, LoaderCircle } from "lucide-react";
+import { CircleAlert, LoaderCircle } from "lucide-react";
 import CopyButton from "@/components/shared/CopyButton";
 import ResearchAccordion from "@/components/chat/ResearchAccordion";
-import type { ProjectDTO, VPromptItem, MessageDTO } from "@/types";
+import type { ProjectDTO, MessageDTO } from "@/types";
 
 export interface ChatDot {
   id: string;
@@ -142,6 +142,8 @@ export default function ChatPanel({
   }
 
   const working = ["RESEARCHING", "SCRIPTING", "VPROMPTING"].includes(project.status);
+  const showResearch =
+    project.status !== "ERROR" && (working || project.sources.length > 0 || Boolean(project.roadmap));
 
   return (
     <div className="space-y-4 pb-4">
@@ -156,7 +158,7 @@ export default function ChatPanel({
         </div>
       </div>
 
-      {project.status !== "DONE" && project.status !== "ERROR" && (
+      {showResearch && (
         <ResearchAccordion 
           isWorking={working} 
           status={project.status} 
@@ -202,14 +204,20 @@ export default function ChatPanel({
         ) : (
           <div key={m.id} id={`msg-${m.id}`} className="flex scroll-mt-2 justify-start">
             <div className="glass max-w-[92%] rounded-2xl rounded-bl-md px-4 py-3">
-              <RichText text={m.content} />
-              <div className="mt-2">
-                <CopyButton text={m.content} label="Copy" ariaLabel="Copy reply" />
-              </div>
+              {m.content ? (
+                <>
+                  <RichText text={m.content} />
+                  <div className="mt-2">
+                    <CopyButton text={m.content} label="Copy" ariaLabel="Copy reply" />
+                  </div>
+                </>
+              ) : (
+                <LoaderCircle className="h-4 w-4 animate-spin text-ember-soft" aria-label="Thinking" />
+              )}
             </div>
           </div>
         )
       )}
     </div>
   );
-}
+          }
