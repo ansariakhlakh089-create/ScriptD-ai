@@ -1,5 +1,5 @@
 // FILE: lib/api-client.ts
-// Browser se apne API ko bulane ka ek hi tareeka. Error aane par ApiError milta hai (code + message).
+// The single way the browser calls our own API. On failure it throws an ApiError (code + message).
 
 export class ApiError extends Error {
   status: number;
@@ -44,7 +44,7 @@ export async function api<T = unknown>(url: string, options: Options = {}): Prom
     }
     throw new ApiError(
       res.status,
-      String(body.error ?? "ERROR"),
+      String(body.code ?? body.error ?? "ERROR"),
       String(body.message ?? "Something went wrong. Please try again."),
       body
     );
