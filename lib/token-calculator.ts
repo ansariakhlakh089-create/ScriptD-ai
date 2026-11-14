@@ -1,12 +1,12 @@
 // FILE: lib/token-calculator.ts
-// "Token" ka hisaab: AI ne kitna use kiya -> user ke kitne token kate.
+// Token accounting: how much the AI used -> how many tokens are deducted from the user.
 import type { Product, ScriptLength } from "@/lib/constants";
 
-// Output token mehnge hote hain, input sasta - isliye input ko 0.25 ginte hain.
-// Real cost dekhkar yahin badal sakte ho.
+// Output tokens cost more than input tokens, so input is counted as 0.25.
+// Adjust these numbers here once you have seen the real costs.
 export const TOKEN_WEIGHTS = { input: 0.25, output: 1 } as const;
 
-// Har step ke output ki upper limit (kharch control + script beech mein na kate)
+// Upper limit on the output of each step (controls cost and keeps a script from being cut off midway)
 export const STEP_LIMITS: Record<
   ScriptLength,
   { research: number; script: number; vprompt: number; maxScenes: number }
@@ -22,7 +22,7 @@ export function chargeFor(promptTokens: number, completionTokens: number): numbe
   );
 }
 
-// Run shuru karne se pehle ka andaza (taaki kam balance wale ko pehle hi rok sakein)
+// Estimate made before a run starts (so a user with a low balance can be stopped up front)
 export function estimateRunTokens(length: ScriptLength): number {
   const l = STEP_LIMITS[length];
   const output = (l.research + l.script + l.vprompt) * 0.6;
@@ -30,7 +30,7 @@ export function estimateRunTokens(length: ScriptLength): number {
   return Math.ceil(output * TOKEN_WEIGHTS.output + input * TOKEN_WEIGHTS.input);
 }
 
-// Pack kharidne par har script ke saath itne token bhi milte hain
+// When a pack is bought, this many tokens come with each script
 export const PACK_TOKENS_PER_SCRIPT = { LONG: 12000, SHORT: 4000 } as const;
 
 export function tokensForProduct(p: Product): number {
