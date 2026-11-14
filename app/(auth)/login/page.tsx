@@ -4,7 +4,7 @@ import LoginScreen from "@/components/auth/LoginScreen";
 
 export const metadata: Metadata = { title: "Login" };
 
-// Login ke baad kahan bhejna hai - sirf apni site ka path allow (bahar ki site par nahi)
+// Where to send the user after login - only paths on our own site are allowed, never external URLs
 function safeNext(raw: string | string[] | undefined): string {
   const value = Array.isArray(raw) ? raw[0] : raw;
   if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) return "/dashboard";
