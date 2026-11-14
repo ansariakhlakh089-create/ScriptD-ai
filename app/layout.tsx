@@ -1,80 +1,89 @@
 // FILE: app/layout.tsx
 import type { Metadata, Viewport } from "next";
-import localFont from "next/font/local";
+import { Outfit, Noto_Sans_Devanagari } from "next/font/google";
 import "./globals.css";
 
-const inter = localFont({
-  src: [
-    {
-      path: "../node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2",
-      weight: "400",
-      style: "normal",
-    },
-    {
-      path: "../node_modules/@fontsource/inter/files/inter-latin-500-normal.woff2",
-      weight: "500",
-      style: "normal",
-    },
-    {
-      path: "../node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2",
-      weight: "600",
-      style: "normal",
-    },
-    {
-      path: "../node_modules/@fontsource/inter/files/inter-latin-700-normal.woff2",
-      weight: "700",
-      style: "normal",
-    },
-  ],
-  variable: "--font-inter",
+// 1. मुख्य इंग्लिश फॉन्ट (SaaS और ChatGPT जैसा मॉडर्न लुक)
+const outfit = Outfit({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-outfit",
   display: "swap",
+  fallback: ["system-ui", "sans-serif"],
 });
 
-const hindi = localFont({
-  src: [
-    {
-      path: "../node_modules/@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-400-normal.woff2",
-      weight: "400",
-      style: "normal",
-    },
-    {
-      path: "../node_modules/@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-500-normal.woff2",
-      weight: "500",
-      style: "normal",
-    },
-    {
-      path: "../node_modules/@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-600-normal.woff2",
-      weight: "600",
-      style: "normal",
-    },
-    {
-      path: "../node_modules/@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-700-normal.woff2",
-      weight: "700",
-      style: "normal",
-    },
-  ],
+// 2. हिंदी (देवनागरी) फॉन्ट
+const hindi = Noto_Sans_Devanagari({
+  subsets: ["devanagari"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-hindi",
   display: "swap",
+  fallback: ["system-ui", "sans-serif"],
 });
 
+// 3. पूरा SEO और मेटाडेटा सेटअप (Google पर रैंक करने और शेयरिंग के लिए)
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
   title: {
     default: "ScriptD AI - Your Content Creation Journey",
     template: "%s · ScriptD AI",
   },
   description: "Research, script and visual prompts for Indian content creators - sources included.",
+  keywords: [
+    "AI script writer",
+    "Content creation",
+    "YouTube script",
+    "Instagram reels",
+    "Indian creators",
+    "ScriptD AI",
+  ],
+  authors: [{ name: "ScriptD AI Team" }],
+  creator: "ScriptD AI",
+  openGraph: {
+    type: "website",
+    locale: "en_IN",
+    url: "/",
+    title: "ScriptD AI - Your Content Creation Journey",
+    description: "Research, script and visual prompts for Indian content creators - sources included.",
+    siteName: "ScriptD AI",
+    images: [
+      {
+        url: "/og-image.png", // आप चाहें तो public फोल्डर में एक इमेज रख सकते हैं
+        width: 1200,
+        height: 630,
+        alt: "ScriptD AI Preview",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ScriptD AI - Your Content Creation Journey",
+    description: "Research, script and visual prompts for Indian content creators.",
+    images: ["/og-image.png"],
+  },
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon-16x16.png",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
+// 4. मोबाइल के लिए व्यूअपोर्ट सेटिंग्स (थीम कलर डार्क ब्लू कर दिया है)
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#766964",
+  maximumScale: 1, // जूम होने से रोकने के लिए (App जैसा फील देने के लिए)
+  userScalable: false,
+  themeColor: "#080B18", // आपके नए Deep Navy कलर के अनुसार
 };
 
+// 5. पूरा HTML स्ट्रक्चर
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${hindi.variable}`}>
-      <body className="min-h-dvh font-sans">{children}</body>
+    <html lang="en" className={`${outfit.variable} ${hindi.variable}`} suppressHydrationWarning>
+      <body className="min-h-dvh font-sans antialiased selection:bg-ember/40">
+        {children}
+      </body>
     </html>
   );
 }
